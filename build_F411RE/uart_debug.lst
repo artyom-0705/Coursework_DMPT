@@ -1,0 +1,223 @@
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccKUdv9g.s 			page 1
+
+
+   1              		.cpu cortex-m4
+   2              		.arch armv7e-m
+   3              		.fpu fpv4-sp-d16
+   4              		.eabi_attribute 27, 1
+   5              		.eabi_attribute 28, 1
+   6              		.eabi_attribute 20, 1
+   7              		.eabi_attribute 21, 1
+   8              		.eabi_attribute 23, 3
+   9              		.eabi_attribute 24, 1
+  10              		.eabi_attribute 25, 1
+  11              		.eabi_attribute 26, 1
+  12              		.eabi_attribute 30, 1
+  13              		.eabi_attribute 34, 1
+  14              		.eabi_attribute 18, 4
+  15              		.file	"uart_debug.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.file 1 "Core/Src/uart_debug.c"
+  20              		.section	.text.UART_Init,"ax",%progbits
+  21              		.align	1
+  22              		.global	UART_Init
+  23              		.syntax unified
+  24              		.thumb
+  25              		.thumb_func
+  27              	UART_Init:
+  28              	.LFB130:
+   1:Core/Src/uart_debug.c **** #include "uart_debug.h"
+   2:Core/Src/uart_debug.c **** #include "stm32f411xe.h"
+   3:Core/Src/uart_debug.c **** 
+   4:Core/Src/uart_debug.c **** void UART_Init(void)        // инициализация UART2
+   5:Core/Src/uart_debug.c **** {
+  29              		.loc 1 5 1 view -0
+  30              		.cfi_startproc
+  31              		@ args = 0, pretend = 0, frame = 0
+  32              		@ frame_needed = 0, uses_anonymous_args = 0
+  33              		@ link register save eliminated.
+   6:Core/Src/uart_debug.c ****     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
+  34              		.loc 1 6 5 view .LVU1
+  35              		.loc 1 6 8 is_stmt 0 view .LVU2
+  36 0000 114B     		ldr	r3, .L2
+  37 0002 1A6B     		ldr	r2, [r3, #48]
+  38              		.loc 1 6 18 view .LVU3
+  39 0004 42F00102 		orr	r2, r2, #1
+  40 0008 1A63     		str	r2, [r3, #48]
+   7:Core/Src/uart_debug.c ****     RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
+  41              		.loc 1 7 5 is_stmt 1 view .LVU4
+  42              		.loc 1 7 8 is_stmt 0 view .LVU5
+  43 000a 1A6C     		ldr	r2, [r3, #64]
+  44              		.loc 1 7 18 view .LVU6
+  45 000c 42F40032 		orr	r2, r2, #131072
+  46 0010 1A64     		str	r2, [r3, #64]
+   8:Core/Src/uart_debug.c ****     
+   9:Core/Src/uart_debug.c ****     GPIOA->MODER &= ~(3 << 4);
+  47              		.loc 1 9 5 is_stmt 1 view .LVU7
+  48              		.loc 1 9 10 is_stmt 0 view .LVU8
+  49 0012 A3F56053 		sub	r3, r3, #14336
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccKUdv9g.s 			page 2
+
+
+  50 0016 1A68     		ldr	r2, [r3]
+  51              		.loc 1 9 18 view .LVU9
+  52 0018 22F03002 		bic	r2, r2, #48
+  53 001c 1A60     		str	r2, [r3]
+  10:Core/Src/uart_debug.c ****     GPIOA->MODER |= (2 << 4);
+  54              		.loc 1 10 5 is_stmt 1 view .LVU10
+  55              		.loc 1 10 10 is_stmt 0 view .LVU11
+  56 001e 1A68     		ldr	r2, [r3]
+  57              		.loc 1 10 18 view .LVU12
+  58 0020 42F02002 		orr	r2, r2, #32
+  59 0024 1A60     		str	r2, [r3]
+  11:Core/Src/uart_debug.c ****     GPIOA->AFR[0] &= ~(0xF << 8);
+  60              		.loc 1 11 5 is_stmt 1 view .LVU13
+  61              		.loc 1 11 15 is_stmt 0 view .LVU14
+  62 0026 1A6A     		ldr	r2, [r3, #32]
+  63              		.loc 1 11 19 view .LVU15
+  64 0028 22F47062 		bic	r2, r2, #3840
+  65 002c 1A62     		str	r2, [r3, #32]
+  12:Core/Src/uart_debug.c ****     GPIOA->AFR[0] |= (7 << 8);
+  66              		.loc 1 12 5 is_stmt 1 view .LVU16
+  67              		.loc 1 12 15 is_stmt 0 view .LVU17
+  68 002e 1A6A     		ldr	r2, [r3, #32]
+  69              		.loc 1 12 19 view .LVU18
+  70 0030 42F4E062 		orr	r2, r2, #1792
+  71 0034 1A62     		str	r2, [r3, #32]
+  13:Core/Src/uart_debug.c ****     
+  14:Core/Src/uart_debug.c ****    
+  15:Core/Src/uart_debug.c ****       USART2->BRR = 417;  // 48000000 / 115200 = 416.67
+  72              		.loc 1 15 7 is_stmt 1 view .LVU19
+  73              		.loc 1 15 19 is_stmt 0 view .LVU20
+  74 0036 A3F5DE33 		sub	r3, r3, #113664
+  75 003a 40F2A112 		movw	r2, #417
+  76 003e 9A60     		str	r2, [r3, #8]
+  16:Core/Src/uart_debug.c ****     
+  17:Core/Src/uart_debug.c ****      USART2->CR1 = USART_CR1_TE | USART_CR1_RE | USART_CR1_UE;
+  77              		.loc 1 17 6 is_stmt 1 view .LVU21
+  78              		.loc 1 17 18 is_stmt 0 view .LVU22
+  79 0040 42F20C02 		movw	r2, #8204
+  80 0044 DA60     		str	r2, [r3, #12]
+  18:Core/Src/uart_debug.c **** }
+  81              		.loc 1 18 1 view .LVU23
+  82 0046 7047     		bx	lr
+  83              	.L3:
+  84              		.align	2
+  85              	.L2:
+  86 0048 00380240 		.word	1073887232
+  87              		.cfi_endproc
+  88              	.LFE130:
+  90              		.section	.text.UART_SendChar,"ax",%progbits
+  91              		.align	1
+  92              		.global	UART_SendChar
+  93              		.syntax unified
+  94              		.thumb
+  95              		.thumb_func
+  97              	UART_SendChar:
+  98              	.LFB131:
+  19:Core/Src/uart_debug.c **** 
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccKUdv9g.s 			page 3
+
+
+  20:Core/Src/uart_debug.c **** void UART_SendChar(char c) {
+  99              		.loc 1 20 28 is_stmt 1 view -0
+ 100              		.cfi_startproc
+ 101              		@ args = 0, pretend = 0, frame = 0
+ 102              		@ frame_needed = 0, uses_anonymous_args = 0
+ 103              		@ link register save eliminated.
+ 104              	.LVL0:
+ 105              	.L5:
+  21:Core/Src/uart_debug.c ****     while (!(USART2->SR & USART_SR_TXE)); // Ждем, пока буфер передачи осв�
+ 106              		.loc 1 21 12 discriminator 1 view .LVU25
+ 107              		.loc 1 21 20 is_stmt 0 discriminator 1 view .LVU26
+ 108 0000 034B     		ldr	r3, .L6
+ 109 0002 1B68     		ldr	r3, [r3]
+ 110              		.loc 1 21 12 discriminator 1 view .LVU27
+ 111 0004 13F0800F 		tst	r3, #128
+ 112 0008 FAD0     		beq	.L5
+  22:Core/Src/uart_debug.c ****     USART2->DR = (uint8_t)c;              // Явное приведение
+ 113              		.loc 1 22 5 is_stmt 1 view .LVU28
+ 114              		.loc 1 22 16 is_stmt 0 view .LVU29
+ 115 000a 014B     		ldr	r3, .L6
+ 116 000c 5860     		str	r0, [r3, #4]
+  23:Core/Src/uart_debug.c **** }
+ 117              		.loc 1 23 1 view .LVU30
+ 118 000e 7047     		bx	lr
+ 119              	.L7:
+ 120              		.align	2
+ 121              	.L6:
+ 122 0010 00440040 		.word	1073759232
+ 123              		.cfi_endproc
+ 124              	.LFE131:
+ 126              		.section	.text.UART_SendString,"ax",%progbits
+ 127              		.align	1
+ 128              		.global	UART_SendString
+ 129              		.syntax unified
+ 130              		.thumb
+ 131              		.thumb_func
+ 133              	UART_SendString:
+ 134              	.LVL1:
+ 135              	.LFB132:
+  24:Core/Src/uart_debug.c **** 
+  25:Core/Src/uart_debug.c **** void UART_SendString(char* str) {
+ 136              		.loc 1 25 33 is_stmt 1 view -0
+ 137              		.cfi_startproc
+ 138              		@ args = 0, pretend = 0, frame = 0
+ 139              		@ frame_needed = 0, uses_anonymous_args = 0
+ 140              		.loc 1 25 33 is_stmt 0 view .LVU32
+ 141 0000 10B5     		push	{r4, lr}
+ 142              	.LCFI0:
+ 143              		.cfi_def_cfa_offset 8
+ 144              		.cfi_offset 4, -8
+ 145              		.cfi_offset 14, -4
+ 146 0002 0446     		mov	r4, r0
+  26:Core/Src/uart_debug.c ****  
+  27:Core/Src/uart_debug.c ****    while (*str) UART_SendChar(*str++);
+ 147              		.loc 1 27 4 is_stmt 1 view .LVU33
+ 148              		.loc 1 27 10 is_stmt 0 view .LVU34
+ 149 0004 02E0     		b	.L9
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccKUdv9g.s 			page 4
+
+
+ 150              	.LVL2:
+ 151              	.L10:
+ 152              		.loc 1 27 17 is_stmt 1 discriminator 2 view .LVU35
+ 153              		.loc 1 27 35 is_stmt 0 discriminator 2 view .LVU36
+ 154 0006 0134     		adds	r4, r4, #1
+ 155              	.LVL3:
+ 156              		.loc 1 27 17 discriminator 2 view .LVU37
+ 157 0008 FFF7FEFF 		bl	UART_SendChar
+ 158              	.LVL4:
+ 159              	.L9:
+ 160              		.loc 1 27 11 is_stmt 1 discriminator 1 view .LVU38
+ 161 000c 2078     		ldrb	r0, [r4]	@ zero_extendqisi2
+ 162 000e 0028     		cmp	r0, #0
+ 163 0010 F9D1     		bne	.L10
+  28:Core/Src/uart_debug.c **** }...
+ 164              		.loc 1 28 1 is_stmt 0 view .LVU39
+ 165 0012 10BD     		pop	{r4, pc}
+ 166              		.loc 1 28 1 view .LVU40
+ 167              		.cfi_endproc
+ 168              	.LFE132:
+ 170              		.text
+ 171              	.Letext0:
+ 172              		.file 2 "C:/SysGCC/arm-eabi/arm-none-eabi/include/machine/_default_types.h"
+ 173              		.file 3 "C:/SysGCC/arm-eabi/arm-none-eabi/include/sys/_stdint.h"
+ 174              		.file 4 "CMSIS/Devices/STM32F4xx/Inc/STM32F411xE/stm32f411xe.h"
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccKUdv9g.s 			page 5
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 uart_debug.c
+C:\Users\parni\AppData\Local\Temp\ccKUdv9g.s:21     .text.UART_Init:00000000 $t
+C:\Users\parni\AppData\Local\Temp\ccKUdv9g.s:27     .text.UART_Init:00000000 UART_Init
+C:\Users\parni\AppData\Local\Temp\ccKUdv9g.s:86     .text.UART_Init:00000048 $d
+C:\Users\parni\AppData\Local\Temp\ccKUdv9g.s:91     .text.UART_SendChar:00000000 $t
+C:\Users\parni\AppData\Local\Temp\ccKUdv9g.s:97     .text.UART_SendChar:00000000 UART_SendChar
+C:\Users\parni\AppData\Local\Temp\ccKUdv9g.s:122    .text.UART_SendChar:00000010 $d
+C:\Users\parni\AppData\Local\Temp\ccKUdv9g.s:127    .text.UART_SendString:00000000 $t
+C:\Users\parni\AppData\Local\Temp\ccKUdv9g.s:133    .text.UART_SendString:00000000 UART_SendString
+
+NO UNDEFINED SYMBOLS

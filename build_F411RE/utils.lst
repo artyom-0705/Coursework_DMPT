@@ -1,0 +1,2420 @@
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 1
+
+
+   1              		.cpu cortex-m4
+   2              		.arch armv7e-m
+   3              		.fpu fpv4-sp-d16
+   4              		.eabi_attribute 27, 1
+   5              		.eabi_attribute 28, 1
+   6              		.eabi_attribute 20, 1
+   7              		.eabi_attribute 21, 1
+   8              		.eabi_attribute 23, 3
+   9              		.eabi_attribute 24, 1
+  10              		.eabi_attribute 25, 1
+  11              		.eabi_attribute 26, 1
+  12              		.eabi_attribute 30, 1
+  13              		.eabi_attribute 34, 1
+  14              		.eabi_attribute 18, 4
+  15              		.file	"utils.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.file 1 "Core/Src/utils.c"
+  20              		.section	.text.millis,"ax",%progbits
+  21              		.align	1
+  22              		.global	millis
+  23              		.syntax unified
+  24              		.thumb
+  25              		.thumb_func
+  27              	millis:
+  28              	.LFB130:
+   1:Core/Src/utils.c **** #include "utils.h"
+   2:Core/Src/utils.c **** #include "init.h"
+   3:Core/Src/utils.c **** #include <math.h>
+   4:Core/Src/utils.c **** #include <stdlib.h>
+   5:Core/Src/utils.c **** #include "mpu_i2c.h"
+   6:Core/Src/utils.c **** 
+   7:Core/Src/utils.c **** /* ===================== КОНСТАНТЫ ===================== */
+   8:Core/Src/utils.c **** 
+   9:Core/Src/utils.c **** #define WHEEL_DIAMETER 67.0f
+  10:Core/Src/utils.c **** #define PULSES_PER_REV 40
+  11:Core/Src/utils.c **** #define WHEEL_BASE 225.0f
+  12:Core/Src/utils.c **** 
+  13:Core/Src/utils.c **** #define CONTROL_PERIOD_MS 1
+  14:Core/Src/utils.c **** 
+  15:Core/Src/utils.c **** #define POSITION_EPS 0
+  16:Core/Src/utils.c **** #define ANGLE_EPS 0.1f
+  17:Core/Src/utils.c **** 
+  18:Core/Src/utils.c **** #define PWM_MAX 700 // 650
+  19:Core/Src/utils.c **** #define PWM_MIN 620 // 620
+  20:Core/Src/utils.c **** #define PWM_DEADZONE 600
+  21:Core/Src/utils.c **** 
+  22:Core/Src/utils.c **** // РОграничение для интегральной ошибки
+  23:Core/Src/utils.c **** #define I_MAX 2000.0f
+  24:Core/Src/utils.c **** #define I_MIN -2000.0f
+  25:Core/Src/utils.c **** 
+  26:Core/Src/utils.c **** #define PI 3.14159265358979323846f
+  27:Core/Src/utils.c **** 
+  28:Core/Src/utils.c **** /* ===================== ГЛОБАЛЬНЫЕ ===================== */
+  29:Core/Src/utils.c **** 
+  30:Core/Src/utils.c **** extern volatile uint16_t left_encoder_ticks;
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 2
+
+
+  31:Core/Src/utils.c **** extern volatile uint16_t right_encoder_ticks;
+  32:Core/Src/utils.c **** extern volatile uint32_t sys_tick;
+  33:Core/Src/utils.c **** 
+  34:Core/Src/utils.c **** /* ===================== ВРЕМЯ ===================== */
+  35:Core/Src/utils.c **** 
+  36:Core/Src/utils.c **** uint16_t MAX_PWM = PWM_MAX;
+  37:Core/Src/utils.c **** uint16_t MIN_PWM = PWM_MIN;
+  38:Core/Src/utils.c **** 
+  39:Core/Src/utils.c **** uint32_t millis(void)
+  40:Core/Src/utils.c **** {
+  29              		.loc 1 40 1 view -0
+  30              		.cfi_startproc
+  31              		@ args = 0, pretend = 0, frame = 0
+  32              		@ frame_needed = 0, uses_anonymous_args = 0
+  33              		@ link register save eliminated.
+  41:Core/Src/utils.c ****     return sys_tick;
+  34              		.loc 1 41 5 view .LVU1
+  35              		.loc 1 41 12 is_stmt 0 view .LVU2
+  36 0000 014B     		ldr	r3, .L2
+  37 0002 1868     		ldr	r0, [r3]
+  42:Core/Src/utils.c **** }
+  38              		.loc 1 42 1 view .LVU3
+  39 0004 7047     		bx	lr
+  40              	.L3:
+  41 0006 00BF     		.align	2
+  42              	.L2:
+  43 0008 00000000 		.word	sys_tick
+  44              		.cfi_endproc
+  45              	.LFE130:
+  47              		.section	.text.delay_ms,"ax",%progbits
+  48              		.align	1
+  49              		.global	delay_ms
+  50              		.syntax unified
+  51              		.thumb
+  52              		.thumb_func
+  54              	delay_ms:
+  55              	.LVL0:
+  56              	.LFB131:
+  43:Core/Src/utils.c **** 
+  44:Core/Src/utils.c **** void delay_ms(uint32_t ms)
+  45:Core/Src/utils.c **** {
+  57              		.loc 1 45 1 is_stmt 1 view -0
+  58              		.cfi_startproc
+  59              		@ args = 0, pretend = 0, frame = 0
+  60              		@ frame_needed = 0, uses_anonymous_args = 0
+  61              		.loc 1 45 1 is_stmt 0 view .LVU5
+  62 0000 38B5     		push	{r3, r4, r5, lr}
+  63              	.LCFI0:
+  64              		.cfi_def_cfa_offset 16
+  65              		.cfi_offset 3, -16
+  66              		.cfi_offset 4, -12
+  67              		.cfi_offset 5, -8
+  68              		.cfi_offset 14, -4
+  69 0002 0546     		mov	r5, r0
+  46:Core/Src/utils.c ****     uint32_t start = millis();
+  70              		.loc 1 46 5 is_stmt 1 view .LVU6
+  71              		.loc 1 46 22 is_stmt 0 view .LVU7
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 3
+
+
+  72 0004 FFF7FEFF 		bl	millis
+  73              	.LVL1:
+  74              		.loc 1 46 22 view .LVU8
+  75 0008 0446     		mov	r4, r0
+  76              	.LVL2:
+  47:Core/Src/utils.c ****     while ((uint32_t)(millis() - start) < ms);
+  77              		.loc 1 47 5 is_stmt 1 view .LVU9
+  78              	.L5:
+  79              		.loc 1 47 41 discriminator 1 view .LVU10
+  80              		.loc 1 47 23 is_stmt 0 discriminator 1 view .LVU11
+  81 000a FFF7FEFF 		bl	millis
+  82              	.LVL3:
+  83              		.loc 1 47 32 discriminator 1 view .LVU12
+  84 000e 001B     		subs	r0, r0, r4
+  85              		.loc 1 47 41 discriminator 1 view .LVU13
+  86 0010 A842     		cmp	r0, r5
+  87 0012 FAD3     		bcc	.L5
+  48:Core/Src/utils.c **** }
+  88              		.loc 1 48 1 view .LVU14
+  89 0014 38BD     		pop	{r3, r4, r5, pc}
+  90              		.loc 1 48 1 view .LVU15
+  91              		.cfi_endproc
+  92              	.LFE131:
+  94              		.section	.text.constrainf,"ax",%progbits
+  95              		.align	1
+  96              		.global	constrainf
+  97              		.syntax unified
+  98              		.thumb
+  99              		.thumb_func
+ 101              	constrainf:
+ 102              	.LVL4:
+ 103              	.LFB132:
+  49:Core/Src/utils.c **** 
+  50:Core/Src/utils.c **** /* ===================== ВСПОМОГАТЕЛЬНЫЕ ===================== */
+  51:Core/Src/utils.c **** 
+  52:Core/Src/utils.c **** int constrainf(float v, int min, int max)
+  53:Core/Src/utils.c **** {
+ 104              		.loc 1 53 1 is_stmt 1 view -0
+ 105              		.cfi_startproc
+ 106              		@ args = 0, pretend = 0, frame = 8
+ 107              		@ frame_needed = 0, uses_anonymous_args = 0
+ 108              		@ link register save eliminated.
+ 109              		.loc 1 53 1 is_stmt 0 view .LVU17
+ 110 0000 82B0     		sub	sp, sp, #8
+ 111              	.LCFI1:
+ 112              		.cfi_def_cfa_offset 8
+ 113 0002 0090     		str	r0, [sp]
+ 114 0004 0191     		str	r1, [sp, #4]
+  54:Core/Src/utils.c ****     if (v < min)
+ 115              		.loc 1 54 5 is_stmt 1 view .LVU18
+ 116              		.loc 1 54 11 is_stmt 0 view .LVU19
+ 117 0006 07EE900A 		vmov	s15, r0	@ int
+ 118 000a F8EEE77A 		vcvt.f32.s32	s15, s15
+ 119              		.loc 1 54 8 view .LVU20
+ 120 000e F4EEC07A 		vcmpe.f32	s15, s0
+ 121 0012 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 122 0016 0EDC     		bgt	.L9
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 4
+
+
+  55:Core/Src/utils.c ****         return min;
+  56:Core/Src/utils.c ****     if (v > max)
+ 123              		.loc 1 56 5 is_stmt 1 view .LVU21
+ 124              		.loc 1 56 11 is_stmt 0 view .LVU22
+ 125 0018 07EE901A 		vmov	s15, r1	@ int
+ 126 001c F8EEE77A 		vcvt.f32.s32	s15, s15
+ 127              		.loc 1 56 8 view .LVU23
+ 128 0020 F4EEC07A 		vcmpe.f32	s15, s0
+ 129 0024 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 130 0028 07D4     		bmi	.L10
+  57:Core/Src/utils.c ****         return max;
+  58:Core/Src/utils.c ****     return v;
+ 131              		.loc 1 58 5 is_stmt 1 view .LVU24
+ 132              		.loc 1 58 12 is_stmt 0 view .LVU25
+ 133 002a FDEEC07A 		vcvt.s32.f32	s15, s0
+ 134 002e 17EE900A 		vmov	r0, s15	@ int
+ 135              	.LVL5:
+ 136              	.L7:
+  59:Core/Src/utils.c **** }
+ 137              		.loc 1 59 1 view .LVU26
+ 138 0032 02B0     		add	sp, sp, #8
+ 139              	.LCFI2:
+ 140              		.cfi_remember_state
+ 141              		.cfi_def_cfa_offset 0
+ 142              	.LVL6:
+ 143              		.loc 1 59 1 view .LVU27
+ 144              		@ sp needed
+ 145 0034 7047     		bx	lr
+ 146              	.LVL7:
+ 147              	.L9:
+ 148              	.LCFI3:
+ 149              		.cfi_restore_state
+  55:Core/Src/utils.c ****         return min;
+ 150              		.loc 1 55 16 view .LVU28
+ 151 0036 0098     		ldr	r0, [sp]
+ 152              	.LVL8:
+  55:Core/Src/utils.c ****         return min;
+ 153              		.loc 1 55 16 view .LVU29
+ 154 0038 FBE7     		b	.L7
+ 155              	.LVL9:
+ 156              	.L10:
+  57:Core/Src/utils.c ****         return max;
+ 157              		.loc 1 57 16 view .LVU30
+ 158 003a 0198     		ldr	r0, [sp, #4]
+ 159              	.LVL10:
+  57:Core/Src/utils.c ****         return max;
+ 160              		.loc 1 57 16 view .LVU31
+ 161 003c F9E7     		b	.L7
+ 162              		.cfi_endproc
+ 163              	.LFE132:
+ 165              		.section	.text.normalizeAngle,"ax",%progbits
+ 166              		.align	1
+ 167              		.global	normalizeAngle
+ 168              		.syntax unified
+ 169              		.thumb
+ 170              		.thumb_func
+ 172              	normalizeAngle:
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 5
+
+
+ 173              	.LVL11:
+ 174              	.LFB133:
+  60:Core/Src/utils.c **** 
+  61:Core/Src/utils.c **** float normalizeAngle(float a)
+  62:Core/Src/utils.c **** {
+ 175              		.loc 1 62 1 is_stmt 1 view -0
+ 176              		.cfi_startproc
+ 177              		@ args = 0, pretend = 0, frame = 0
+ 178              		@ frame_needed = 0, uses_anonymous_args = 0
+ 179              		@ link register save eliminated.
+  63:Core/Src/utils.c ****     while (a > 180)
+ 180              		.loc 1 63 5 view .LVU33
+ 181              		.loc 1 63 11 is_stmt 0 view .LVU34
+ 182 0000 03E0     		b	.L13
+ 183              	.L14:
+  64:Core/Src/utils.c ****         a -= 360;
+ 184              		.loc 1 64 9 is_stmt 1 view .LVU35
+ 185              		.loc 1 64 11 is_stmt 0 view .LVU36
+ 186 0002 DFED0C7A 		vldr.32	s15, .L17
+ 187 0006 30EE670A 		vsub.f32	s0, s0, s15
+ 188              	.LVL12:
+ 189              	.L13:
+  63:Core/Src/utils.c ****     while (a > 180)
+ 190              		.loc 1 63 14 is_stmt 1 view .LVU37
+ 191 000a DFED0B7A 		vldr.32	s15, .L17+4
+ 192 000e B4EEE70A 		vcmpe.f32	s0, s15
+ 193 0012 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 194 0016 F4DC     		bgt	.L14
+  63:Core/Src/utils.c ****     while (a > 180)
+ 195              		.loc 1 63 14 is_stmt 0 view .LVU38
+ 196 0018 03E0     		b	.L15
+ 197              	.L16:
+  65:Core/Src/utils.c ****     while (a < -180)
+  66:Core/Src/utils.c ****         a += 360;
+ 198              		.loc 1 66 9 is_stmt 1 view .LVU39
+ 199              		.loc 1 66 11 is_stmt 0 view .LVU40
+ 200 001a DFED067A 		vldr.32	s15, .L17
+ 201 001e 30EE270A 		vadd.f32	s0, s0, s15
+ 202              	.LVL13:
+ 203              	.L15:
+  65:Core/Src/utils.c ****     while (a < -180)
+ 204              		.loc 1 65 14 is_stmt 1 view .LVU41
+ 205 0022 DFED067A 		vldr.32	s15, .L17+8
+ 206 0026 B4EEE70A 		vcmpe.f32	s0, s15
+ 207 002a F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 208 002e F4D4     		bmi	.L16
+  67:Core/Src/utils.c ****     return a;
+ 209              		.loc 1 67 5 view .LVU42
+  68:Core/Src/utils.c **** }
+ 210              		.loc 1 68 1 is_stmt 0 view .LVU43
+ 211 0030 7047     		bx	lr
+ 212              	.L18:
+ 213 0032 00BF     		.align	2
+ 214              	.L17:
+ 215 0034 0000B443 		.word	1135869952
+ 216 0038 00003443 		.word	1127481344
+ 217 003c 000034C3 		.word	-1020002304
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 6
+
+
+ 218              		.cfi_endproc
+ 219              	.LFE133:
+ 221              		.section	.text.PWM_Left,"ax",%progbits
+ 222              		.align	1
+ 223              		.global	PWM_Left
+ 224              		.syntax unified
+ 225              		.thumb
+ 226              		.thumb_func
+ 228              	PWM_Left:
+ 229              	.LVL14:
+ 230              	.LFB134:
+  69:Core/Src/utils.c **** 
+  70:Core/Src/utils.c **** /* ===================== PWM ===================== */
+  71:Core/Src/utils.c **** 
+  72:Core/Src/utils.c **** void PWM_Left(uint16_t value)
+  73:Core/Src/utils.c **** {
+ 231              		.loc 1 73 1 is_stmt 1 view -0
+ 232              		.cfi_startproc
+ 233              		@ args = 0, pretend = 0, frame = 0
+ 234              		@ frame_needed = 0, uses_anonymous_args = 0
+ 235              		.loc 1 73 1 is_stmt 0 view .LVU45
+ 236 0000 08B5     		push	{r3, lr}
+ 237              	.LCFI4:
+ 238              		.cfi_def_cfa_offset 8
+ 239              		.cfi_offset 3, -8
+ 240              		.cfi_offset 14, -4
+ 241 0002 00EE100A 		vmov	s0, r0	@ int
+  74:Core/Src/utils.c ****     TIM1->CCR2 = constrainf(value, PWM_MIN, PWM_MAX);
+ 242              		.loc 1 74 5 is_stmt 1 view .LVU46
+ 243              		.loc 1 74 18 is_stmt 0 view .LVU47
+ 244 0006 4FF42F71 		mov	r1, #700
+ 245 000a 4FF41B70 		mov	r0, #620
+ 246              	.LVL15:
+ 247              		.loc 1 74 18 view .LVU48
+ 248 000e B8EE400A 		vcvt.f32.u32	s0, s0
+ 249              	.LVL16:
+ 250              		.loc 1 74 18 view .LVU49
+ 251 0012 FFF7FEFF 		bl	constrainf
+ 252              	.LVL17:
+ 253              		.loc 1 74 16 discriminator 1 view .LVU50
+ 254 0016 014B     		ldr	r3, .L21
+ 255 0018 9863     		str	r0, [r3, #56]
+  75:Core/Src/utils.c **** }
+ 256              		.loc 1 75 1 view .LVU51
+ 257 001a 08BD     		pop	{r3, pc}
+ 258              	.L22:
+ 259              		.align	2
+ 260              	.L21:
+ 261 001c 00000140 		.word	1073807360
+ 262              		.cfi_endproc
+ 263              	.LFE134:
+ 265              		.section	.text.PWM_Right,"ax",%progbits
+ 266              		.align	1
+ 267              		.global	PWM_Right
+ 268              		.syntax unified
+ 269              		.thumb
+ 270              		.thumb_func
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 7
+
+
+ 272              	PWM_Right:
+ 273              	.LVL18:
+ 274              	.LFB135:
+  76:Core/Src/utils.c **** 
+  77:Core/Src/utils.c **** void PWM_Right(uint16_t value)
+  78:Core/Src/utils.c **** {
+ 275              		.loc 1 78 1 is_stmt 1 view -0
+ 276              		.cfi_startproc
+ 277              		@ args = 0, pretend = 0, frame = 0
+ 278              		@ frame_needed = 0, uses_anonymous_args = 0
+ 279              		.loc 1 78 1 is_stmt 0 view .LVU53
+ 280 0000 08B5     		push	{r3, lr}
+ 281              	.LCFI5:
+ 282              		.cfi_def_cfa_offset 8
+ 283              		.cfi_offset 3, -8
+ 284              		.cfi_offset 14, -4
+ 285 0002 00EE100A 		vmov	s0, r0	@ int
+  79:Core/Src/utils.c ****     TIM1->CCR1 = constrainf(value, PWM_MIN, PWM_MAX);
+ 286              		.loc 1 79 5 is_stmt 1 view .LVU54
+ 287              		.loc 1 79 18 is_stmt 0 view .LVU55
+ 288 0006 4FF42F71 		mov	r1, #700
+ 289 000a 4FF41B70 		mov	r0, #620
+ 290              	.LVL19:
+ 291              		.loc 1 79 18 view .LVU56
+ 292 000e B8EE400A 		vcvt.f32.u32	s0, s0
+ 293              	.LVL20:
+ 294              		.loc 1 79 18 view .LVU57
+ 295 0012 FFF7FEFF 		bl	constrainf
+ 296              	.LVL21:
+ 297              		.loc 1 79 16 discriminator 1 view .LVU58
+ 298 0016 014B     		ldr	r3, .L25
+ 299 0018 5863     		str	r0, [r3, #52]
+  80:Core/Src/utils.c **** }
+ 300              		.loc 1 80 1 view .LVU59
+ 301 001a 08BD     		pop	{r3, pc}
+ 302              	.L26:
+ 303              		.align	2
+ 304              	.L25:
+ 305 001c 00000140 		.word	1073807360
+ 306              		.cfi_endproc
+ 307              	.LFE135:
+ 309              		.section	.text.left_dir,"ax",%progbits
+ 310              		.align	1
+ 311              		.global	left_dir
+ 312              		.syntax unified
+ 313              		.thumb
+ 314              		.thumb_func
+ 316              	left_dir:
+ 317              	.LVL22:
+ 318              	.LFB136:
+  81:Core/Src/utils.c **** 
+  82:Core/Src/utils.c **** /* ===================== НАПРАВЛЕНИЕ ===================== */
+  83:Core/Src/utils.c **** 
+  84:Core/Src/utils.c **** void left_dir(uint8_t d)
+  85:Core/Src/utils.c **** {
+ 319              		.loc 1 85 1 is_stmt 1 view -0
+ 320              		.cfi_startproc
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 8
+
+
+ 321              		@ args = 0, pretend = 0, frame = 0
+ 322              		@ frame_needed = 0, uses_anonymous_args = 0
+ 323              		@ link register save eliminated.
+  86:Core/Src/utils.c ****     if (d == 0)
+ 324              		.loc 1 86 5 view .LVU61
+ 325              		.loc 1 86 8 is_stmt 0 view .LVU62
+ 326 0000 0346     		mov	r3, r0
+ 327 0002 30B9     		cbnz	r0, .L28
+  87:Core/Src/utils.c ****         GPIOB->BSRR = GPIO_BSRR_BR10 | GPIO_BSRR_BR6;
+ 328              		.loc 1 87 9 is_stmt 1 view .LVU63
+ 329              		.loc 1 87 21 is_stmt 0 view .LVU64
+ 330 0004 084A     		ldr	r2, .L32
+ 331 0006 4FF08861 		mov	r1, #71303168
+ 332 000a 9161     		str	r1, [r2, #24]
+  88:Core/Src/utils.c ****     if (d == 1)
+ 333              		.loc 1 88 5 is_stmt 1 view .LVU65
+ 334              	.L29:
+  89:Core/Src/utils.c ****         GPIOB->BSRR = GPIO_BSRR_BS10 | GPIO_BSRR_BR6;
+  90:Core/Src/utils.c ****     if (d == 2)
+ 335              		.loc 1 90 5 view .LVU66
+ 336              		.loc 1 90 8 is_stmt 0 view .LVU67
+ 337 000c 022B     		cmp	r3, #2
+ 338 000e 06D0     		beq	.L31
+ 339              	.L27:
+  91:Core/Src/utils.c ****         GPIOB->BSRR = GPIO_BSRR_BR10 | GPIO_BSRR_BS6;
+  92:Core/Src/utils.c **** }
+ 340              		.loc 1 92 1 view .LVU68
+ 341 0010 7047     		bx	lr
+ 342              	.L28:
+  88:Core/Src/utils.c ****         GPIOB->BSRR = GPIO_BSRR_BS10 | GPIO_BSRR_BR6;
+ 343              		.loc 1 88 5 is_stmt 1 view .LVU69
+  88:Core/Src/utils.c ****         GPIOB->BSRR = GPIO_BSRR_BS10 | GPIO_BSRR_BR6;
+ 344              		.loc 1 88 8 is_stmt 0 view .LVU70
+ 345 0012 0128     		cmp	r0, #1
+ 346 0014 FAD1     		bne	.L29
+  89:Core/Src/utils.c ****         GPIOB->BSRR = GPIO_BSRR_BS10 | GPIO_BSRR_BR6;
+ 347              		.loc 1 89 9 is_stmt 1 view .LVU71
+  89:Core/Src/utils.c ****         GPIOB->BSRR = GPIO_BSRR_BS10 | GPIO_BSRR_BR6;
+ 348              		.loc 1 89 21 is_stmt 0 view .LVU72
+ 349 0016 044B     		ldr	r3, .L32
+ 350 0018 044A     		ldr	r2, .L32+4
+ 351 001a 9A61     		str	r2, [r3, #24]
+  90:Core/Src/utils.c ****         GPIOB->BSRR = GPIO_BSRR_BR10 | GPIO_BSRR_BS6;
+ 352              		.loc 1 90 5 is_stmt 1 view .LVU73
+ 353 001c 7047     		bx	lr
+ 354              	.L31:
+  91:Core/Src/utils.c ****         GPIOB->BSRR = GPIO_BSRR_BR10 | GPIO_BSRR_BS6;
+ 355              		.loc 1 91 9 view .LVU74
+  91:Core/Src/utils.c ****         GPIOB->BSRR = GPIO_BSRR_BR10 | GPIO_BSRR_BS6;
+ 356              		.loc 1 91 21 is_stmt 0 view .LVU75
+ 357 001e 024B     		ldr	r3, .L32
+ 358 0020 034A     		ldr	r2, .L32+8
+ 359 0022 9A61     		str	r2, [r3, #24]
+ 360              		.loc 1 92 1 view .LVU76
+ 361 0024 F4E7     		b	.L27
+ 362              	.L33:
+ 363 0026 00BF     		.align	2
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 9
+
+
+ 364              	.L32:
+ 365 0028 00040240 		.word	1073873920
+ 366 002c 00044000 		.word	4195328
+ 367 0030 40000004 		.word	67108928
+ 368              		.cfi_endproc
+ 369              	.LFE136:
+ 371              		.section	.text.right_dir,"ax",%progbits
+ 372              		.align	1
+ 373              		.global	right_dir
+ 374              		.syntax unified
+ 375              		.thumb
+ 376              		.thumb_func
+ 378              	right_dir:
+ 379              	.LVL23:
+ 380              	.LFB137:
+  93:Core/Src/utils.c **** 
+  94:Core/Src/utils.c **** void right_dir(uint8_t d)
+  95:Core/Src/utils.c **** {
+ 381              		.loc 1 95 1 is_stmt 1 view -0
+ 382              		.cfi_startproc
+ 383              		@ args = 0, pretend = 0, frame = 0
+ 384              		@ frame_needed = 0, uses_anonymous_args = 0
+ 385              		@ link register save eliminated.
+  96:Core/Src/utils.c ****     if (d == 0)
+ 386              		.loc 1 96 5 view .LVU78
+ 387              		.loc 1 96 8 is_stmt 0 view .LVU79
+ 388 0000 0346     		mov	r3, r0
+ 389 0002 30B9     		cbnz	r0, .L35
+  97:Core/Src/utils.c ****         GPIOB->BSRR = GPIO_BSRR_BR5 | GPIO_BSRR_BR7;
+ 390              		.loc 1 97 9 is_stmt 1 view .LVU80
+ 391              		.loc 1 97 21 is_stmt 0 view .LVU81
+ 392 0004 084A     		ldr	r2, .L39
+ 393 0006 4FF42001 		mov	r1, #10485760
+ 394 000a 9161     		str	r1, [r2, #24]
+  98:Core/Src/utils.c ****     if (d == 1)
+ 395              		.loc 1 98 5 is_stmt 1 view .LVU82
+ 396              	.L36:
+  99:Core/Src/utils.c ****         GPIOB->BSRR = GPIO_BSRR_BS5 | GPIO_BSRR_BR7;
+ 100:Core/Src/utils.c ****     if (d == 2)
+ 397              		.loc 1 100 5 view .LVU83
+ 398              		.loc 1 100 8 is_stmt 0 view .LVU84
+ 399 000c 022B     		cmp	r3, #2
+ 400 000e 06D0     		beq	.L38
+ 401              	.L34:
+ 101:Core/Src/utils.c ****         GPIOB->BSRR = GPIO_BSRR_BR5 | GPIO_BSRR_BS7;
+ 102:Core/Src/utils.c **** }
+ 402              		.loc 1 102 1 view .LVU85
+ 403 0010 7047     		bx	lr
+ 404              	.L35:
+  98:Core/Src/utils.c ****         GPIOB->BSRR = GPIO_BSRR_BS5 | GPIO_BSRR_BR7;
+ 405              		.loc 1 98 5 is_stmt 1 view .LVU86
+  98:Core/Src/utils.c ****         GPIOB->BSRR = GPIO_BSRR_BS5 | GPIO_BSRR_BR7;
+ 406              		.loc 1 98 8 is_stmt 0 view .LVU87
+ 407 0012 0128     		cmp	r0, #1
+ 408 0014 FAD1     		bne	.L36
+  99:Core/Src/utils.c ****         GPIOB->BSRR = GPIO_BSRR_BS5 | GPIO_BSRR_BR7;
+ 409              		.loc 1 99 9 is_stmt 1 view .LVU88
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 10
+
+
+  99:Core/Src/utils.c ****         GPIOB->BSRR = GPIO_BSRR_BS5 | GPIO_BSRR_BR7;
+ 410              		.loc 1 99 21 is_stmt 0 view .LVU89
+ 411 0016 044B     		ldr	r3, .L39
+ 412 0018 044A     		ldr	r2, .L39+4
+ 413 001a 9A61     		str	r2, [r3, #24]
+ 100:Core/Src/utils.c ****         GPIOB->BSRR = GPIO_BSRR_BR5 | GPIO_BSRR_BS7;
+ 414              		.loc 1 100 5 is_stmt 1 view .LVU90
+ 415 001c 7047     		bx	lr
+ 416              	.L38:
+ 101:Core/Src/utils.c ****         GPIOB->BSRR = GPIO_BSRR_BR5 | GPIO_BSRR_BS7;
+ 417              		.loc 1 101 9 view .LVU91
+ 101:Core/Src/utils.c ****         GPIOB->BSRR = GPIO_BSRR_BR5 | GPIO_BSRR_BS7;
+ 418              		.loc 1 101 21 is_stmt 0 view .LVU92
+ 419 001e 024B     		ldr	r3, .L39
+ 420 0020 034A     		ldr	r2, .L39+8
+ 421 0022 9A61     		str	r2, [r3, #24]
+ 422              		.loc 1 102 1 view .LVU93
+ 423 0024 F4E7     		b	.L34
+ 424              	.L40:
+ 425 0026 00BF     		.align	2
+ 426              	.L39:
+ 427 0028 00040240 		.word	1073873920
+ 428 002c 20008000 		.word	8388640
+ 429 0030 80002000 		.word	2097280
+ 430              		.cfi_endproc
+ 431              	.LFE137:
+ 433              		.section	.text.stopMotors,"ax",%progbits
+ 434              		.align	1
+ 435              		.global	stopMotors
+ 436              		.syntax unified
+ 437              		.thumb
+ 438              		.thumb_func
+ 440              	stopMotors:
+ 441              	.LFB138:
+ 103:Core/Src/utils.c **** 
+ 104:Core/Src/utils.c **** void stopMotors(void)
+ 105:Core/Src/utils.c **** {
+ 442              		.loc 1 105 1 is_stmt 1 view -0
+ 443              		.cfi_startproc
+ 444              		@ args = 0, pretend = 0, frame = 0
+ 445              		@ frame_needed = 0, uses_anonymous_args = 0
+ 446 0000 08B5     		push	{r3, lr}
+ 447              	.LCFI6:
+ 448              		.cfi_def_cfa_offset 8
+ 449              		.cfi_offset 3, -8
+ 450              		.cfi_offset 14, -4
+ 106:Core/Src/utils.c ****     left_dir(0);
+ 451              		.loc 1 106 5 view .LVU95
+ 452 0002 0020     		movs	r0, #0
+ 453 0004 FFF7FEFF 		bl	left_dir
+ 454              	.LVL24:
+ 107:Core/Src/utils.c ****     right_dir(0);
+ 455              		.loc 1 107 5 view .LVU96
+ 456 0008 0020     		movs	r0, #0
+ 457 000a FFF7FEFF 		bl	right_dir
+ 458              	.LVL25:
+ 108:Core/Src/utils.c ****     PWM_Left(0);
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 11
+
+
+ 459              		.loc 1 108 5 view .LVU97
+ 460 000e 0020     		movs	r0, #0
+ 461 0010 FFF7FEFF 		bl	PWM_Left
+ 462              	.LVL26:
+ 109:Core/Src/utils.c ****     PWM_Right(0);
+ 463              		.loc 1 109 5 view .LVU98
+ 464 0014 0020     		movs	r0, #0
+ 465 0016 FFF7FEFF 		bl	PWM_Right
+ 466              	.LVL27:
+ 110:Core/Src/utils.c **** }
+ 467              		.loc 1 110 1 is_stmt 0 view .LVU99
+ 468 001a 08BD     		pop	{r3, pc}
+ 469              		.cfi_endproc
+ 470              	.LFE138:
+ 472              		.global	__aeabi_f2d
+ 473              		.global	__aeabi_dmul
+ 474              		.global	__aeabi_dadd
+ 475              		.global	__aeabi_d2f
+ 476              		.section	.text.PID,"ax",%progbits
+ 477              		.align	1
+ 478              		.global	PID
+ 479              		.syntax unified
+ 480              		.thumb
+ 481              		.thumb_func
+ 483              	PID:
+ 484              	.LVL28:
+ 485              	.LFB139:
+ 111:Core/Src/utils.c **** 
+ 112:Core/Src/utils.c **** /* ===================== PID ===================== */
+ 113:Core/Src/utils.c **** 
+ 114:Core/Src/utils.c **** float PID(PID_t *p, float err, float dt)
+ 115:Core/Src/utils.c **** {
+ 486              		.loc 1 115 1 is_stmt 1 view -0
+ 487              		.cfi_startproc
+ 488              		@ args = 0, pretend = 0, frame = 0
+ 489              		@ frame_needed = 0, uses_anonymous_args = 0
+ 490              		.loc 1 115 1 is_stmt 0 view .LVU101
+ 491 0000 2DE9D043 		push	{r4, r6, r7, r8, r9, lr}
+ 492              	.LCFI7:
+ 493              		.cfi_def_cfa_offset 24
+ 494              		.cfi_offset 4, -24
+ 495              		.cfi_offset 6, -20
+ 496              		.cfi_offset 7, -16
+ 497              		.cfi_offset 8, -12
+ 498              		.cfi_offset 9, -8
+ 499              		.cfi_offset 14, -4
+ 500 0004 2DED048B 		vpush.64	{d8, d9}
+ 501              	.LCFI8:
+ 502              		.cfi_def_cfa_offset 40
+ 503              		.cfi_offset 80, -40
+ 504              		.cfi_offset 81, -36
+ 505              		.cfi_offset 82, -32
+ 506              		.cfi_offset 83, -28
+ 507 0008 0446     		mov	r4, r0
+ 508 000a B0EE408A 		vmov.f32	s16, s0
+ 509 000e F0EE608A 		vmov.f32	s17, s1
+ 116:Core/Src/utils.c ****     p->i += (err + p->prev)/2.0 * dt;
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 12
+
+
+ 510              		.loc 1 116 5 is_stmt 1 view .LVU102
+ 511              		.loc 1 116 6 is_stmt 0 view .LVU103
+ 512 0012 C068     		ldr	r0, [r0, #12]	@ float
+ 513              	.LVL29:
+ 514              		.loc 1 116 6 view .LVU104
+ 515 0014 FFF7FEFF 		bl	__aeabi_f2d
+ 516              	.LVL30:
+ 517              		.loc 1 116 6 view .LVU105
+ 518 0018 0646     		mov	r6, r0
+ 519 001a 0F46     		mov	r7, r1
+ 520              		.loc 1 116 21 view .LVU106
+ 521 001c 94ED049A 		vldr.32	s18, [r4, #16]
+ 522              		.loc 1 116 18 view .LVU107
+ 523 0020 79EE087A 		vadd.f32	s15, s18, s16
+ 524 0024 17EE900A 		vmov	r0, s15
+ 525 0028 FFF7FEFF 		bl	__aeabi_f2d
+ 526              	.LVL31:
+ 527              		.loc 1 116 28 view .LVU108
+ 528 002c 0022     		movs	r2, #0
+ 529 002e 244B     		ldr	r3, .L51
+ 530 0030 FFF7FEFF 		bl	__aeabi_dmul
+ 531              	.LVL32:
+ 532 0034 8046     		mov	r8, r0
+ 533 0036 8946     		mov	r9, r1
+ 534              		.loc 1 116 33 view .LVU109
+ 535 0038 18EE900A 		vmov	r0, s17
+ 536 003c FFF7FEFF 		bl	__aeabi_f2d
+ 537              	.LVL33:
+ 538 0040 4246     		mov	r2, r8
+ 539 0042 4B46     		mov	r3, r9
+ 540 0044 FFF7FEFF 		bl	__aeabi_dmul
+ 541              	.LVL34:
+ 542 0048 0246     		mov	r2, r0
+ 543 004a 0B46     		mov	r3, r1
+ 544              		.loc 1 116 10 view .LVU110
+ 545 004c 3046     		mov	r0, r6
+ 546 004e 3946     		mov	r1, r7
+ 547 0050 FFF7FEFF 		bl	__aeabi_dadd
+ 548              	.LVL35:
+ 549 0054 FFF7FEFF 		bl	__aeabi_d2f
+ 550              	.LVL36:
+ 551 0058 07EE900A 		vmov	s15, r0
+ 552 005c E060     		str	r0, [r4, #12]	@ float
+ 117:Core/Src/utils.c **** 
+ 118:Core/Src/utils.c ****     // Anti-windup (Что бы интегральная часть не уходила в беск
+ 119:Core/Src/utils.c ****     if (p->i > I_MAX)
+ 553              		.loc 1 119 5 is_stmt 1 view .LVU111
+ 554              		.loc 1 119 8 is_stmt 0 view .LVU112
+ 555 005e 9FED197A 		vldr.32	s14, .L51+4
+ 556 0062 F4EEC77A 		vcmpe.f32	s15, s14
+ 557 0066 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 558 006a 01DD     		ble	.L44
+ 120:Core/Src/utils.c ****         p->i = I_MAX;
+ 559              		.loc 1 120 9 is_stmt 1 view .LVU113
+ 560              		.loc 1 120 14 is_stmt 0 view .LVU114
+ 561 006c 84ED037A 		vstr.32	s14, [r4, #12]
+ 562              	.L44:
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 13
+
+
+ 121:Core/Src/utils.c ****     if (p->i < I_MIN)
+ 563              		.loc 1 121 5 is_stmt 1 view .LVU115
+ 564              		.loc 1 121 10 is_stmt 0 view .LVU116
+ 565 0070 94ED037A 		vldr.32	s14, [r4, #12]
+ 566              		.loc 1 121 8 view .LVU117
+ 567 0074 DFED147A 		vldr.32	s15, .L51+8
+ 568 0078 B4EEE77A 		vcmpe.f32	s14, s15
+ 569 007c F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 570 0080 01D5     		bpl	.L46
+ 122:Core/Src/utils.c ****         p->i = I_MIN;
+ 571              		.loc 1 122 9 is_stmt 1 view .LVU118
+ 572              		.loc 1 122 14 is_stmt 0 view .LVU119
+ 573 0082 C4ED037A 		vstr.32	s15, [r4, #12]
+ 574              	.L46:
+ 123:Core/Src/utils.c **** 
+ 124:Core/Src/utils.c ****     float d = (err - p->prev) / dt;
+ 575              		.loc 1 124 5 is_stmt 1 view .LVU120
+ 576              		.loc 1 124 20 is_stmt 0 view .LVU121
+ 577 0086 38EE499A 		vsub.f32	s18, s16, s18
+ 578              		.loc 1 124 11 view .LVU122
+ 579 008a C9EE286A 		vdiv.f32	s13, s18, s17
+ 580              	.LVL37:
+ 125:Core/Src/utils.c ****     p->prev = err;
+ 581              		.loc 1 125 5 is_stmt 1 view .LVU123
+ 582              		.loc 1 125 13 is_stmt 0 view .LVU124
+ 583 008e 84ED048A 		vstr.32	s16, [r4, #16]
+ 126:Core/Src/utils.c **** 
+ 127:Core/Src/utils.c ****     return p->kp * err + p->ki * p->i + p->kd * d;
+ 584              		.loc 1 127 5 is_stmt 1 view .LVU125
+ 585              		.loc 1 127 13 is_stmt 0 view .LVU126
+ 586 0092 D4ED007A 		vldr.32	s15, [r4]
+ 587              		.loc 1 127 18 view .LVU127
+ 588 0096 67EE887A 		vmul.f32	s15, s15, s16
+ 589              		.loc 1 127 27 view .LVU128
+ 590 009a 94ED017A 		vldr.32	s14, [r4, #4]
+ 591              		.loc 1 127 35 view .LVU129
+ 592 009e 94ED036A 		vldr.32	s12, [r4, #12]
+ 593              		.loc 1 127 32 view .LVU130
+ 594 00a2 27EE067A 		vmul.f32	s14, s14, s12
+ 595              		.loc 1 127 24 view .LVU131
+ 596 00a6 77EE877A 		vadd.f32	s15, s15, s14
+ 597              		.loc 1 127 42 view .LVU132
+ 598 00aa 94ED020A 		vldr.32	s0, [r4, #8]
+ 599              		.loc 1 127 47 view .LVU133
+ 600 00ae 20EE260A 		vmul.f32	s0, s0, s13
+ 128:Core/Src/utils.c **** }
+ 601              		.loc 1 128 1 view .LVU134
+ 602 00b2 37EE800A 		vadd.f32	s0, s15, s0
+ 603 00b6 BDEC048B 		vldm	sp!, {d8-d9}
+ 604              	.LCFI9:
+ 605              		.cfi_restore 82
+ 606              		.cfi_restore 83
+ 607              		.cfi_restore 80
+ 608              		.cfi_restore 81
+ 609              		.cfi_def_cfa_offset 24
+ 610              	.LVL38:
+ 611              		.loc 1 128 1 view .LVU135
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 14
+
+
+ 612 00ba BDE8D083 		pop	{r4, r6, r7, r8, r9, pc}
+ 613              	.LVL39:
+ 614              	.L52:
+ 615              		.loc 1 128 1 view .LVU136
+ 616 00be 00BF     		.align	2
+ 617              	.L51:
+ 618 00c0 0000E03F 		.word	1071644672
+ 619 00c4 0000FA44 		.word	1157234688
+ 620 00c8 0000FAC4 		.word	-990248960
+ 621              		.cfi_endproc
+ 622              	.LFE139:
+ 624              		.section	.text.PID_Reset,"ax",%progbits
+ 625              		.align	1
+ 626              		.global	PID_Reset
+ 627              		.syntax unified
+ 628              		.thumb
+ 629              		.thumb_func
+ 631              	PID_Reset:
+ 632              	.LVL40:
+ 633              	.LFB140:
+ 129:Core/Src/utils.c **** 
+ 130:Core/Src/utils.c **** void PID_Reset(PID_t *p)
+ 131:Core/Src/utils.c **** {
+ 634              		.loc 1 131 1 is_stmt 1 view -0
+ 635              		.cfi_startproc
+ 636              		@ args = 0, pretend = 0, frame = 0
+ 637              		@ frame_needed = 0, uses_anonymous_args = 0
+ 638              		@ link register save eliminated.
+ 132:Core/Src/utils.c ****     p->i = 0;
+ 639              		.loc 1 132 5 view .LVU138
+ 640              		.loc 1 132 10 is_stmt 0 view .LVU139
+ 641 0000 0023     		movs	r3, #0
+ 642 0002 C360     		str	r3, [r0, #12]	@ float
+ 133:Core/Src/utils.c ****     p->prev = 0;
+ 643              		.loc 1 133 5 is_stmt 1 view .LVU140
+ 644              		.loc 1 133 13 is_stmt 0 view .LVU141
+ 645 0004 0361     		str	r3, [r0, #16]	@ float
+ 134:Core/Src/utils.c **** }
+ 646              		.loc 1 134 1 view .LVU142
+ 647 0006 7047     		bx	lr
+ 648              		.cfi_endproc
+ 649              	.LFE140:
+ 651              		.section	.text.turnByAngle,"ax",%progbits
+ 652              		.align	1
+ 653              		.global	turnByAngle
+ 654              		.syntax unified
+ 655              		.thumb
+ 656              		.thumb_func
+ 658              	turnByAngle:
+ 659              	.LVL41:
+ 660              	.LFB142:
+ 135:Core/Src/utils.c **** 
+ 136:Core/Src/utils.c **** /* ===================== PID НАСТРОЙКИ ===================== */
+ 137:Core/Src/utils.c **** // ПИДЫ 
+ 138:Core/Src/utils.c **** PID_t pidSpeed = {13.7f, 1.9f, 0.1f};
+ 139:Core/Src/utils.c **** PID_t pidYaw = {27.8f, 0.0f, 1.15f};
+ 140:Core/Src/utils.c **** PID_t pidSync = {10.0f, 1.0f, 0.5f};
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 15
+
+
+ 141:Core/Src/utils.c **** /* ===================== ДВИЖЕНИЕ ПРЯМО ===================== */
+ 142:Core/Src/utils.c **** 
+ 143:Core/Src/utils.c **** void moveStraight(float distance_cm)
+ 144:Core/Src/utils.c **** {
+ 145:Core/Src/utils.c **** 
+ 146:Core/Src/utils.c ****     // Обнуляем ПИД регуляторы
+ 147:Core/Src/utils.c ****     PID_Reset(&pidYaw);
+ 148:Core/Src/utils.c ****     PID_Reset(&pidSync);
+ 149:Core/Src/utils.c **** 
+ 150:Core/Src/utils.c ****     // Обнуляем энкодеры
+ 151:Core/Src/utils.c ****     __disable_irq();
+ 152:Core/Src/utils.c ****     left_encoder_ticks = 0;
+ 153:Core/Src/utils.c ****     right_encoder_ticks = 0;
+ 154:Core/Src/utils.c ****     __enable_irq();
+ 155:Core/Src/utils.c **** 
+ 156:Core/Src/utils.c ****     // Записываем угл в начальный момент времени (для выр
+ 157:Core/Src/utils.c ****     MPU_Update();
+ 158:Core/Src/utils.c ****     float startYaw = MPU_GetYaw();
+ 159:Core/Src/utils.c **** 
+ 160:Core/Src/utils.c ****     // Расчет количества тиков для достижения цели
+ 161:Core/Src/utils.c ****     uint32_t targetTicks =
+ 162:Core/Src/utils.c ****         (distance_cm * 10.0f / (2 * PI * WHEEL_DIAMETER)) * PULSES_PER_REV;
+ 163:Core/Src/utils.c **** 
+ 164:Core/Src/utils.c ****     // Запись времени для обновления скорости раз в пром�
+ 165:Core/Src/utils.c ****     uint32_t lastTime = millis();
+ 166:Core/Src/utils.c **** 
+ 167:Core/Src/utils.c ****     while (1)
+ 168:Core/Src/utils.c ****     {
+ 169:Core/Src/utils.c ****         // Проверяем прошло ли время
+ 170:Core/Src/utils.c ****         if (millis() - lastTime < CONTROL_PERIOD_MS)
+ 171:Core/Src/utils.c ****             continue;
+ 172:Core/Src/utils.c **** 
+ 173:Core/Src/utils.c ****         // Считываем правый и левый энкодер, рассчитываем �
+ 174:Core/Src/utils.c ****         __disable_irq();
+ 175:Core/Src/utils.c ****         uint16_t L = left_encoder_ticks;
+ 176:Core/Src/utils.c ****         uint16_t R = right_encoder_ticks;
+ 177:Core/Src/utils.c ****         __enable_irq();
+ 178:Core/Src/utils.c ****         
+ 179:Core/Src/utils.c ****         uint16_t avg = (uint16_t)((L + R) / 2.0f);
+ 180:Core/Src/utils.c **** 
+ 181:Core/Src/utils.c ****         int32_t distErr = targetTicks - avg;
+ 182:Core/Src/utils.c **** 
+ 183:Core/Src/utils.c ****         if (abs(distErr) <= POSITION_EPS)
+ 184:Core/Src/utils.c ****         {
+ 185:Core/Src/utils.c ****             break;
+ 186:Core/Src/utils.c ****         }
+ 187:Core/Src/utils.c **** 
+ 188:Core/Src/utils.c ****         float basePWM = 630;
+ 189:Core/Src/utils.c **** 
+ 190:Core/Src/utils.c ****         if (distErr < 150)
+ 191:Core/Src/utils.c ****         {
+ 192:Core/Src/utils.c ****             basePWM = 620;
+ 193:Core/Src/utils.c ****         }
+ 194:Core/Src/utils.c ****         else if (distErr < 50)
+ 195:Core/Src/utils.c ****         {
+ 196:Core/Src/utils.c ****             basePWM = 615;
+ 197:Core/Src/utils.c ****         }
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 16
+
+
+ 198:Core/Src/utils.c **** 
+ 199:Core/Src/utils.c ****         // Записываем сколько времени прошло
+ 200:Core/Src/utils.c ****         float dt = (millis() - lastTime) / 1000.0f;
+ 201:Core/Src/utils.c ****         lastTime = millis();
+ 202:Core/Src/utils.c **** 
+ 203:Core/Src/utils.c **** 
+ 204:Core/Src/utils.c ****         // ПИД настройки движения по заданной прямой, то ес
+ 205:Core/Src/utils.c ****         MPU_Update();
+ 206:Core/Src/utils.c ****         float yawCorr = PID(&pidYaw,
+ 207:Core/Src/utils.c ****                             startYaw - MPU_GetYaw(), dt);
+ 208:Core/Src/utils.c ****         // ПИД контролирующий одинаковое ли расстояние пр�
+ 209:Core/Src/utils.c ****         float syncCorr = PID(&pidSync, L - R, dt);
+ 210:Core/Src/utils.c **** 
+ 211:Core/Src/utils.c ****         // Расчет результирующего ШИМ сигнала
+ 212:Core/Src/utils.c ****         float pwmL = basePWM - yawCorr - syncCorr;
+ 213:Core/Src/utils.c ****         float pwmR = basePWM + yawCorr + syncCorr;
+ 214:Core/Src/utils.c **** 
+ 215:Core/Src/utils.c ****         // Проверка входит ли он в диапазон возможного ШИМ
+ 216:Core/Src/utils.c ****         pwmL = constrainf(pwmL, PWM_MIN, 650);
+ 217:Core/Src/utils.c ****         pwmR = constrainf(pwmR, PWM_MIN, 650);
+ 218:Core/Src/utils.c **** 
+ 219:Core/Src/utils.c ****         left_dir(1);
+ 220:Core/Src/utils.c ****         right_dir(1);
+ 221:Core/Src/utils.c ****         PWM_Left(pwmL);
+ 222:Core/Src/utils.c ****         PWM_Right(pwmR);
+ 223:Core/Src/utils.c ****     }
+ 224:Core/Src/utils.c **** 
+ 225:Core/Src/utils.c ****     // Останавливаем моторы робота
+ 226:Core/Src/utils.c ****     stopMotors();
+ 227:Core/Src/utils.c ****     delay_ms(200);
+ 228:Core/Src/utils.c ****     MPU_Update();
+ 229:Core/Src/utils.c ****     turnByAngle(normalizeAngle(startYaw - MPU_GetYaw()));
+ 230:Core/Src/utils.c **** }
+ 231:Core/Src/utils.c **** 
+ 232:Core/Src/utils.c **** /* ===================== ПОВОРОТ НА МЕСТЕ ===================== */
+ 233:Core/Src/utils.c **** 
+ 234:Core/Src/utils.c **** void turnByAngle(float angle_deg)
+ 235:Core/Src/utils.c **** {
+ 661              		.loc 1 235 1 is_stmt 1 view -0
+ 662              		.cfi_startproc
+ 663              		@ args = 0, pretend = 0, frame = 0
+ 664              		@ frame_needed = 0, uses_anonymous_args = 0
+ 665              		.loc 1 235 1 is_stmt 0 view .LVU144
+ 666 0000 10B5     		push	{r4, lr}
+ 667              	.LCFI10:
+ 668              		.cfi_def_cfa_offset 8
+ 669              		.cfi_offset 4, -8
+ 670              		.cfi_offset 14, -4
+ 671 0002 2DED068B 		vpush.64	{d8, d9, d10}
+ 672              	.LCFI11:
+ 673              		.cfi_def_cfa_offset 32
+ 674              		.cfi_offset 80, -32
+ 675              		.cfi_offset 81, -28
+ 676              		.cfi_offset 82, -24
+ 677              		.cfi_offset 83, -20
+ 678              		.cfi_offset 84, -16
+ 679              		.cfi_offset 85, -12
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 17
+
+
+ 680 0006 F0EE409A 		vmov.f32	s19, s0
+ 236:Core/Src/utils.c **** 
+ 237:Core/Src/utils.c ****     // Обнуляем ПИД регуляторы
+ 238:Core/Src/utils.c ****     PID_Reset(&pidSpeed);
+ 681              		.loc 1 238 5 is_stmt 1 view .LVU145
+ 682 000a 5D48     		ldr	r0, .L72
+ 683 000c FFF7FEFF 		bl	PID_Reset
+ 684              	.LVL42:
+ 239:Core/Src/utils.c ****     PID_Reset(&pidYaw);
+ 685              		.loc 1 239 5 view .LVU146
+ 686 0010 5C48     		ldr	r0, .L72+4
+ 687 0012 FFF7FEFF 		bl	PID_Reset
+ 688              	.LVL43:
+ 240:Core/Src/utils.c ****     PID_Reset(&pidSync);
+ 689              		.loc 1 240 5 view .LVU147
+ 690 0016 5C48     		ldr	r0, .L72+8
+ 691 0018 FFF7FEFF 		bl	PID_Reset
+ 692              	.LVL44:
+ 241:Core/Src/utils.c **** 
+ 242:Core/Src/utils.c ****     // Обнуляем энкодеры
+ 243:Core/Src/utils.c ****     __disable_irq();
+ 693              		.loc 1 243 5 view .LVU148
+ 694              	.LBB16:
+ 695              	.LBI16:
+ 696              		.file 2 "CMSIS/Include/cmsis_gcc.h"
+   1:CMSIS/Include/cmsis_gcc.h **** /**************************************************************************//**
+   2:CMSIS/Include/cmsis_gcc.h ****  * @file     cmsis_gcc.h
+   3:CMSIS/Include/cmsis_gcc.h ****  * @brief    CMSIS compiler GCC header file
+   4:CMSIS/Include/cmsis_gcc.h ****  * @version  V5.0.4
+   5:CMSIS/Include/cmsis_gcc.h ****  * @date     09. April 2018
+   6:CMSIS/Include/cmsis_gcc.h ****  ******************************************************************************/
+   7:CMSIS/Include/cmsis_gcc.h **** /*
+   8:CMSIS/Include/cmsis_gcc.h ****  * Copyright (c) 2009-2018 Arm Limited. All rights reserved.
+   9:CMSIS/Include/cmsis_gcc.h ****  *
+  10:CMSIS/Include/cmsis_gcc.h ****  * SPDX-License-Identifier: Apache-2.0
+  11:CMSIS/Include/cmsis_gcc.h ****  *
+  12:CMSIS/Include/cmsis_gcc.h ****  * Licensed under the Apache License, Version 2.0 (the License); you may
+  13:CMSIS/Include/cmsis_gcc.h ****  * not use this file except in compliance with the License.
+  14:CMSIS/Include/cmsis_gcc.h ****  * You may obtain a copy of the License at
+  15:CMSIS/Include/cmsis_gcc.h ****  *
+  16:CMSIS/Include/cmsis_gcc.h ****  * www.apache.org/licenses/LICENSE-2.0
+  17:CMSIS/Include/cmsis_gcc.h ****  *
+  18:CMSIS/Include/cmsis_gcc.h ****  * Unless required by applicable law or agreed to in writing, software
+  19:CMSIS/Include/cmsis_gcc.h ****  * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+  20:CMSIS/Include/cmsis_gcc.h ****  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  21:CMSIS/Include/cmsis_gcc.h ****  * See the License for the specific language governing permissions and
+  22:CMSIS/Include/cmsis_gcc.h ****  * limitations under the License.
+  23:CMSIS/Include/cmsis_gcc.h ****  */
+  24:CMSIS/Include/cmsis_gcc.h **** 
+  25:CMSIS/Include/cmsis_gcc.h **** #ifndef __CMSIS_GCC_H
+  26:CMSIS/Include/cmsis_gcc.h **** #define __CMSIS_GCC_H
+  27:CMSIS/Include/cmsis_gcc.h **** 
+  28:CMSIS/Include/cmsis_gcc.h **** /* ignore some GCC warnings */
+  29:CMSIS/Include/cmsis_gcc.h **** #pragma GCC diagnostic push
+  30:CMSIS/Include/cmsis_gcc.h **** #pragma GCC diagnostic ignored "-Wsign-conversion"
+  31:CMSIS/Include/cmsis_gcc.h **** #pragma GCC diagnostic ignored "-Wconversion"
+  32:CMSIS/Include/cmsis_gcc.h **** #pragma GCC diagnostic ignored "-Wunused-parameter"
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 18
+
+
+  33:CMSIS/Include/cmsis_gcc.h **** 
+  34:CMSIS/Include/cmsis_gcc.h **** /* Fallback for __has_builtin */
+  35:CMSIS/Include/cmsis_gcc.h **** #ifndef __has_builtin
+  36:CMSIS/Include/cmsis_gcc.h ****   #define __has_builtin(x) (0)
+  37:CMSIS/Include/cmsis_gcc.h **** #endif
+  38:CMSIS/Include/cmsis_gcc.h **** 
+  39:CMSIS/Include/cmsis_gcc.h **** /* CMSIS compiler specific defines */
+  40:CMSIS/Include/cmsis_gcc.h **** #ifndef   __ASM
+  41:CMSIS/Include/cmsis_gcc.h ****   #define __ASM                                  __asm
+  42:CMSIS/Include/cmsis_gcc.h **** #endif
+  43:CMSIS/Include/cmsis_gcc.h **** #ifndef   __INLINE
+  44:CMSIS/Include/cmsis_gcc.h ****   #define __INLINE                               inline
+  45:CMSIS/Include/cmsis_gcc.h **** #endif
+  46:CMSIS/Include/cmsis_gcc.h **** #ifndef   __STATIC_INLINE
+  47:CMSIS/Include/cmsis_gcc.h ****   #define __STATIC_INLINE                        static inline
+  48:CMSIS/Include/cmsis_gcc.h **** #endif
+  49:CMSIS/Include/cmsis_gcc.h **** #ifndef   __STATIC_FORCEINLINE                 
+  50:CMSIS/Include/cmsis_gcc.h ****   #define __STATIC_FORCEINLINE                   __attribute__((always_inline)) static inline
+  51:CMSIS/Include/cmsis_gcc.h **** #endif                                           
+  52:CMSIS/Include/cmsis_gcc.h **** #ifndef   __NO_RETURN
+  53:CMSIS/Include/cmsis_gcc.h ****   #define __NO_RETURN                            __attribute__((__noreturn__))
+  54:CMSIS/Include/cmsis_gcc.h **** #endif
+  55:CMSIS/Include/cmsis_gcc.h **** #ifndef   __USED
+  56:CMSIS/Include/cmsis_gcc.h ****   #define __USED                                 __attribute__((used))
+  57:CMSIS/Include/cmsis_gcc.h **** #endif
+  58:CMSIS/Include/cmsis_gcc.h **** #ifndef   __WEAK
+  59:CMSIS/Include/cmsis_gcc.h ****   #define __WEAK                                 __attribute__((weak))
+  60:CMSIS/Include/cmsis_gcc.h **** #endif
+  61:CMSIS/Include/cmsis_gcc.h **** #ifndef   __PACKED
+  62:CMSIS/Include/cmsis_gcc.h ****   #define __PACKED                               __attribute__((packed, aligned(1)))
+  63:CMSIS/Include/cmsis_gcc.h **** #endif
+  64:CMSIS/Include/cmsis_gcc.h **** #ifndef   __PACKED_STRUCT
+  65:CMSIS/Include/cmsis_gcc.h ****   #define __PACKED_STRUCT                        struct __attribute__((packed, aligned(1)))
+  66:CMSIS/Include/cmsis_gcc.h **** #endif
+  67:CMSIS/Include/cmsis_gcc.h **** #ifndef   __PACKED_UNION
+  68:CMSIS/Include/cmsis_gcc.h ****   #define __PACKED_UNION                         union __attribute__((packed, aligned(1)))
+  69:CMSIS/Include/cmsis_gcc.h **** #endif
+  70:CMSIS/Include/cmsis_gcc.h **** #ifndef   __UNALIGNED_UINT32        /* deprecated */
+  71:CMSIS/Include/cmsis_gcc.h ****   #pragma GCC diagnostic push
+  72:CMSIS/Include/cmsis_gcc.h ****   #pragma GCC diagnostic ignored "-Wpacked"
+  73:CMSIS/Include/cmsis_gcc.h ****   #pragma GCC diagnostic ignored "-Wattributes"
+  74:CMSIS/Include/cmsis_gcc.h ****   struct __attribute__((packed)) T_UINT32 { uint32_t v; };
+  75:CMSIS/Include/cmsis_gcc.h ****   #pragma GCC diagnostic pop
+  76:CMSIS/Include/cmsis_gcc.h ****   #define __UNALIGNED_UINT32(x)                  (((struct T_UINT32 *)(x))->v)
+  77:CMSIS/Include/cmsis_gcc.h **** #endif
+  78:CMSIS/Include/cmsis_gcc.h **** #ifndef   __UNALIGNED_UINT16_WRITE
+  79:CMSIS/Include/cmsis_gcc.h ****   #pragma GCC diagnostic push
+  80:CMSIS/Include/cmsis_gcc.h ****   #pragma GCC diagnostic ignored "-Wpacked"
+  81:CMSIS/Include/cmsis_gcc.h ****   #pragma GCC diagnostic ignored "-Wattributes"
+  82:CMSIS/Include/cmsis_gcc.h ****   __PACKED_STRUCT T_UINT16_WRITE { uint16_t v; };
+  83:CMSIS/Include/cmsis_gcc.h ****   #pragma GCC diagnostic pop
+  84:CMSIS/Include/cmsis_gcc.h ****   #define __UNALIGNED_UINT16_WRITE(addr, val)    (void)((((struct T_UINT16_WRITE *)(void *)(addr))-
+  85:CMSIS/Include/cmsis_gcc.h **** #endif
+  86:CMSIS/Include/cmsis_gcc.h **** #ifndef   __UNALIGNED_UINT16_READ
+  87:CMSIS/Include/cmsis_gcc.h ****   #pragma GCC diagnostic push
+  88:CMSIS/Include/cmsis_gcc.h ****   #pragma GCC diagnostic ignored "-Wpacked"
+  89:CMSIS/Include/cmsis_gcc.h ****   #pragma GCC diagnostic ignored "-Wattributes"
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 19
+
+
+  90:CMSIS/Include/cmsis_gcc.h ****   __PACKED_STRUCT T_UINT16_READ { uint16_t v; };
+  91:CMSIS/Include/cmsis_gcc.h ****   #pragma GCC diagnostic pop
+  92:CMSIS/Include/cmsis_gcc.h ****   #define __UNALIGNED_UINT16_READ(addr)          (((const struct T_UINT16_READ *)(const void *)(add
+  93:CMSIS/Include/cmsis_gcc.h **** #endif
+  94:CMSIS/Include/cmsis_gcc.h **** #ifndef   __UNALIGNED_UINT32_WRITE
+  95:CMSIS/Include/cmsis_gcc.h ****   #pragma GCC diagnostic push
+  96:CMSIS/Include/cmsis_gcc.h ****   #pragma GCC diagnostic ignored "-Wpacked"
+  97:CMSIS/Include/cmsis_gcc.h ****   #pragma GCC diagnostic ignored "-Wattributes"
+  98:CMSIS/Include/cmsis_gcc.h ****   __PACKED_STRUCT T_UINT32_WRITE { uint32_t v; };
+  99:CMSIS/Include/cmsis_gcc.h ****   #pragma GCC diagnostic pop
+ 100:CMSIS/Include/cmsis_gcc.h ****   #define __UNALIGNED_UINT32_WRITE(addr, val)    (void)((((struct T_UINT32_WRITE *)(void *)(addr))-
+ 101:CMSIS/Include/cmsis_gcc.h **** #endif
+ 102:CMSIS/Include/cmsis_gcc.h **** #ifndef   __UNALIGNED_UINT32_READ
+ 103:CMSIS/Include/cmsis_gcc.h ****   #pragma GCC diagnostic push
+ 104:CMSIS/Include/cmsis_gcc.h ****   #pragma GCC diagnostic ignored "-Wpacked"
+ 105:CMSIS/Include/cmsis_gcc.h ****   #pragma GCC diagnostic ignored "-Wattributes"
+ 106:CMSIS/Include/cmsis_gcc.h ****   __PACKED_STRUCT T_UINT32_READ { uint32_t v; };
+ 107:CMSIS/Include/cmsis_gcc.h ****   #pragma GCC diagnostic pop
+ 108:CMSIS/Include/cmsis_gcc.h ****   #define __UNALIGNED_UINT32_READ(addr)          (((const struct T_UINT32_READ *)(const void *)(add
+ 109:CMSIS/Include/cmsis_gcc.h **** #endif
+ 110:CMSIS/Include/cmsis_gcc.h **** #ifndef   __ALIGNED
+ 111:CMSIS/Include/cmsis_gcc.h ****   #define __ALIGNED(x)                           __attribute__((aligned(x)))
+ 112:CMSIS/Include/cmsis_gcc.h **** #endif
+ 113:CMSIS/Include/cmsis_gcc.h **** #ifndef   __RESTRICT
+ 114:CMSIS/Include/cmsis_gcc.h ****   #define __RESTRICT                             __restrict
+ 115:CMSIS/Include/cmsis_gcc.h **** #endif
+ 116:CMSIS/Include/cmsis_gcc.h **** 
+ 117:CMSIS/Include/cmsis_gcc.h **** 
+ 118:CMSIS/Include/cmsis_gcc.h **** /* ###########################  Core Function Access  ########################### */
+ 119:CMSIS/Include/cmsis_gcc.h **** /** \ingroup  CMSIS_Core_FunctionInterface
+ 120:CMSIS/Include/cmsis_gcc.h ****     \defgroup CMSIS_Core_RegAccFunctions CMSIS Core Register Access Functions
+ 121:CMSIS/Include/cmsis_gcc.h ****   @{
+ 122:CMSIS/Include/cmsis_gcc.h ****  */
+ 123:CMSIS/Include/cmsis_gcc.h **** 
+ 124:CMSIS/Include/cmsis_gcc.h **** /**
+ 125:CMSIS/Include/cmsis_gcc.h ****   \brief   Enable IRQ Interrupts
+ 126:CMSIS/Include/cmsis_gcc.h ****   \details Enables IRQ interrupts by clearing the I-bit in the CPSR.
+ 127:CMSIS/Include/cmsis_gcc.h ****            Can only be executed in Privileged modes.
+ 128:CMSIS/Include/cmsis_gcc.h ****  */
+ 129:CMSIS/Include/cmsis_gcc.h **** __STATIC_FORCEINLINE void __enable_irq(void)
+ 130:CMSIS/Include/cmsis_gcc.h **** {
+ 131:CMSIS/Include/cmsis_gcc.h ****   __ASM volatile ("cpsie i" : : : "memory");
+ 132:CMSIS/Include/cmsis_gcc.h **** }
+ 133:CMSIS/Include/cmsis_gcc.h **** 
+ 134:CMSIS/Include/cmsis_gcc.h **** 
+ 135:CMSIS/Include/cmsis_gcc.h **** /**
+ 136:CMSIS/Include/cmsis_gcc.h ****   \brief   Disable IRQ Interrupts
+ 137:CMSIS/Include/cmsis_gcc.h ****   \details Disables IRQ interrupts by setting the I-bit in the CPSR.
+ 138:CMSIS/Include/cmsis_gcc.h ****            Can only be executed in Privileged modes.
+ 139:CMSIS/Include/cmsis_gcc.h ****  */
+ 140:CMSIS/Include/cmsis_gcc.h **** __STATIC_FORCEINLINE void __disable_irq(void)
+ 697              		.loc 2 140 27 view .LVU149
+ 698              	.LBB17:
+ 141:CMSIS/Include/cmsis_gcc.h **** {
+ 142:CMSIS/Include/cmsis_gcc.h ****   __ASM volatile ("cpsid i" : : : "memory");
+ 699              		.loc 2 142 3 view .LVU150
+ 700              		.syntax unified
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 20
+
+
+ 701              	@ 142 "CMSIS/Include/cmsis_gcc.h" 1
+ 702 001c 72B6     		cpsid i
+ 703              	@ 0 "" 2
+ 704              		.thumb
+ 705              		.syntax unified
+ 706              	.LBE17:
+ 707              	.LBE16:
+ 244:Core/Src/utils.c ****     left_encoder_ticks = 0;
+ 708              		.loc 1 244 5 view .LVU151
+ 709              		.loc 1 244 24 is_stmt 0 view .LVU152
+ 710 001e 0023     		movs	r3, #0
+ 711 0020 5A4A     		ldr	r2, .L72+12
+ 712 0022 1380     		strh	r3, [r2]	@ movhi
+ 245:Core/Src/utils.c ****     right_encoder_ticks = 0;
+ 713              		.loc 1 245 5 is_stmt 1 view .LVU153
+ 714              		.loc 1 245 25 is_stmt 0 view .LVU154
+ 715 0024 5A4A     		ldr	r2, .L72+16
+ 716 0026 1380     		strh	r3, [r2]	@ movhi
+ 246:Core/Src/utils.c ****     __enable_irq();
+ 717              		.loc 1 246 5 is_stmt 1 view .LVU155
+ 718              	.LBB18:
+ 719              	.LBI18:
+ 129:CMSIS/Include/cmsis_gcc.h **** {
+ 720              		.loc 2 129 27 view .LVU156
+ 721              	.LBB19:
+ 131:CMSIS/Include/cmsis_gcc.h **** }
+ 722              		.loc 2 131 3 view .LVU157
+ 723              		.syntax unified
+ 724              	@ 131 "CMSIS/Include/cmsis_gcc.h" 1
+ 725 0028 62B6     		cpsie i
+ 726              	@ 0 "" 2
+ 727              		.thumb
+ 728              		.syntax unified
+ 729              	.LBE19:
+ 730              	.LBE18:
+ 247:Core/Src/utils.c **** 
+ 248:Core/Src/utils.c ****     // Рассчитываем желаемый угл
+ 249:Core/Src/utils.c ****     MPU_Update();
+ 731              		.loc 1 249 5 view .LVU158
+ 732 002a FFF7FEFF 		bl	MPU_Update
+ 733              	.LVL45:
+ 250:Core/Src/utils.c ****     float targetYaw = MPU_GetYaw() + angle_deg;
+ 734              		.loc 1 250 5 view .LVU159
+ 735              		.loc 1 250 23 is_stmt 0 view .LVU160
+ 736 002e FFF7FEFF 		bl	MPU_GetYaw
+ 737              	.LVL46:
+ 738              		.loc 1 250 11 discriminator 1 view .LVU161
+ 739 0032 70EE299A 		vadd.f32	s19, s0, s19
+ 740              	.LVL47:
+ 251:Core/Src/utils.c ****     // Запись времени для обновления скорости раз в пром�
+ 252:Core/Src/utils.c ****     uint32_t lastTime = millis();
+ 741              		.loc 1 252 5 is_stmt 1 view .LVU162
+ 742              		.loc 1 252 25 is_stmt 0 view .LVU163
+ 743 0036 FFF7FEFF 		bl	millis
+ 744              	.LVL48:
+ 745 003a 0446     		mov	r4, r0
+ 746              	.LVL49:
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 21
+
+
+ 747              		.loc 1 252 25 view .LVU164
+ 748 003c 19E0     		b	.L55
+ 749              	.LVL50:
+ 750              	.L60:
+ 751              	.LBB20:
+ 253:Core/Src/utils.c **** 
+ 254:Core/Src/utils.c ****     while (1)
+ 255:Core/Src/utils.c ****     {
+ 256:Core/Src/utils.c ****         // Проверяем прошло ли время
+ 257:Core/Src/utils.c ****         if (millis() - lastTime < CONTROL_PERIOD_MS)
+ 258:Core/Src/utils.c ****             continue;
+ 259:Core/Src/utils.c **** 
+ 260:Core/Src/utils.c ****         // Записываем сколько времени прошло
+ 261:Core/Src/utils.c ****         float dt = (millis() - lastTime) / 1000.0f;
+ 262:Core/Src/utils.c ****         lastTime = millis();
+ 263:Core/Src/utils.c **** 
+ 264:Core/Src/utils.c ****         MPU_Update();
+ 265:Core/Src/utils.c ****         // Считаем ошибку, если она допустима прекращаем в�
+ 266:Core/Src/utils.c ****         float angleErr = targetYaw - MPU_GetYaw();
+ 267:Core/Src/utils.c ****         if (fabs(angleErr) <= ANGLE_EPS)
+ 268:Core/Src/utils.c ****             break;
+ 269:Core/Src/utils.c **** 
+ 270:Core/Src/utils.c ****         // ПИД по углу с помощью гироскопа
+ 271:Core/Src/utils.c ****         float omega = PID(&pidYaw, angleErr, dt);
+ 272:Core/Src/utils.c ****         // Задаем скорость через ошибку по углу (положению)
+ 273:Core/Src/utils.c ****         float basePWM = PID(&pidSpeed, fabs(omega), dt);
+ 274:Core/Src/utils.c ****         // ПИД для прохождения колесами одинакового расст�
+ 275:Core/Src/utils.c ****         float sync = PID(&pidSync,
+ 276:Core/Src/utils.c ****                          left_encoder_ticks - right_encoder_ticks,
+ 277:Core/Src/utils.c ****                          dt);
+ 278:Core/Src/utils.c **** 
+ 279:Core/Src/utils.c ****         // Расчет результирующего ШИМ сигнала
+ 280:Core/Src/utils.c ****         float pwmL = basePWM - sync;
+ 281:Core/Src/utils.c ****         float pwmR = basePWM + sync;
+ 282:Core/Src/utils.c **** 
+ 283:Core/Src/utils.c ****         // Проверка входит ли он в диапазон возможного ШИМ
+ 284:Core/Src/utils.c ****         pwmL = constrainf(pwmL, PWM_MIN, 650);
+ 285:Core/Src/utils.c ****         pwmR = constrainf(pwmR, PWM_MIN, 650);
+ 286:Core/Src/utils.c **** 
+ 287:Core/Src/utils.c ****         // Если ШИМ меньше того при котором робот начинает 
+ 288:Core/Src/utils.c ****         if (pwmL > 0 && pwmL < PWM_DEADZONE)
+ 289:Core/Src/utils.c ****             pwmL = PWM_DEADZONE;
+ 290:Core/Src/utils.c ****         if (pwmR > 0 && pwmR < PWM_DEADZONE)
+ 291:Core/Src/utils.c ****             pwmR = PWM_DEADZONE;
+ 292:Core/Src/utils.c **** 
+ 293:Core/Src/utils.c ****         // Задаем направления и скорости моторов
+ 294:Core/Src/utils.c ****         if (omega > 0)
+ 752              		.loc 1 294 9 is_stmt 1 view .LVU165
+ 753              		.loc 1 294 12 is_stmt 0 view .LVU166
+ 754 003e B5EEC09A 		vcmpe.f32	s18, #0
+ 755 0042 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 756 0046 40F38E80 		ble	.L70
+ 295:Core/Src/utils.c ****         {
+ 296:Core/Src/utils.c ****             left_dir(2);
+ 757              		.loc 1 296 13 is_stmt 1 view .LVU167
+ 758 004a 0220     		movs	r0, #2
+ 759 004c FFF7FEFF 		bl	left_dir
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 22
+
+
+ 760              	.LVL51:
+ 297:Core/Src/utils.c ****             right_dir(1);
+ 761              		.loc 1 297 13 view .LVU168
+ 762 0050 0120     		movs	r0, #1
+ 763 0052 FFF7FEFF 		bl	right_dir
+ 764              	.LVL52:
+ 765              	.L64:
+ 298:Core/Src/utils.c ****         }
+ 299:Core/Src/utils.c ****         else
+ 300:Core/Src/utils.c ****         {
+ 301:Core/Src/utils.c ****             left_dir(1);
+ 302:Core/Src/utils.c ****             right_dir(2);
+ 303:Core/Src/utils.c ****         }
+ 304:Core/Src/utils.c **** 
+ 305:Core/Src/utils.c ****         PWM_Left(pwmL);
+ 766              		.loc 1 305 9 view .LVU169
+ 767 0056 FCEEE88A 		vcvt.u32.f32	s17, s17
+ 768              	.LVL53:
+ 769              		.loc 1 305 9 is_stmt 0 view .LVU170
+ 770 005a 18EE903A 		vmov	r3, s17	@ int
+ 771 005e 98B2     		uxth	r0, r3
+ 772 0060 FFF7FEFF 		bl	PWM_Left
+ 773              	.LVL54:
+ 306:Core/Src/utils.c ****         PWM_Right(pwmR);
+ 774              		.loc 1 306 9 is_stmt 1 view .LVU171
+ 775 0064 BCEEC88A 		vcvt.u32.f32	s16, s16
+ 776              	.LVL55:
+ 777              		.loc 1 306 9 is_stmt 0 view .LVU172
+ 778 0068 18EE103A 		vmov	r3, s16	@ int
+ 779 006c 98B2     		uxth	r0, r3
+ 780 006e FFF7FEFF 		bl	PWM_Right
+ 781              	.LVL56:
+ 782              	.L55:
+ 783              		.loc 1 306 9 view .LVU173
+ 784              	.LBE20:
+ 254:Core/Src/utils.c ****     {
+ 785              		.loc 1 254 5 is_stmt 1 view .LVU174
+ 786              	.LBB21:
+ 257:Core/Src/utils.c ****             continue;
+ 787              		.loc 1 257 9 view .LVU175
+ 257:Core/Src/utils.c ****             continue;
+ 788              		.loc 1 257 13 is_stmt 0 view .LVU176
+ 789 0072 FFF7FEFF 		bl	millis
+ 790              	.LVL57:
+ 257:Core/Src/utils.c ****             continue;
+ 791              		.loc 1 257 12 discriminator 1 view .LVU177
+ 792 0076 A042     		cmp	r0, r4
+ 793 0078 FBD0     		beq	.L55
+ 261:Core/Src/utils.c ****         lastTime = millis();
+ 794              		.loc 1 261 9 is_stmt 1 view .LVU178
+ 261:Core/Src/utils.c ****         lastTime = millis();
+ 795              		.loc 1 261 21 is_stmt 0 view .LVU179
+ 796 007a FFF7FEFF 		bl	millis
+ 797              	.LVL58:
+ 261:Core/Src/utils.c ****         lastTime = millis();
+ 798              		.loc 1 261 30 discriminator 1 view .LVU180
+ 799 007e 001B     		subs	r0, r0, r4
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 23
+
+
+ 261:Core/Src/utils.c ****         lastTime = millis();
+ 800              		.loc 1 261 42 discriminator 1 view .LVU181
+ 801 0080 07EE900A 		vmov	s15, r0	@ int
+ 802 0084 F8EE677A 		vcvt.f32.u32	s15, s15
+ 261:Core/Src/utils.c ****         lastTime = millis();
+ 803              		.loc 1 261 15 discriminator 1 view .LVU182
+ 804 0088 9FED427A 		vldr.32	s14, .L72+20
+ 805 008c C7EE878A 		vdiv.f32	s17, s15, s14
+ 806              	.LVL59:
+ 262:Core/Src/utils.c **** 
+ 807              		.loc 1 262 9 is_stmt 1 view .LVU183
+ 262:Core/Src/utils.c **** 
+ 808              		.loc 1 262 20 is_stmt 0 view .LVU184
+ 809 0090 FFF7FEFF 		bl	millis
+ 810              	.LVL60:
+ 811 0094 0446     		mov	r4, r0
+ 812              	.LVL61:
+ 264:Core/Src/utils.c ****         // Считаем ошибку, если она допустима прекращаем в�
+ 813              		.loc 1 264 9 is_stmt 1 view .LVU185
+ 814 0096 FFF7FEFF 		bl	MPU_Update
+ 815              	.LVL62:
+ 266:Core/Src/utils.c ****         if (fabs(angleErr) <= ANGLE_EPS)
+ 816              		.loc 1 266 9 view .LVU186
+ 266:Core/Src/utils.c ****         if (fabs(angleErr) <= ANGLE_EPS)
+ 817              		.loc 1 266 38 is_stmt 0 view .LVU187
+ 818 009a FFF7FEFF 		bl	MPU_GetYaw
+ 819              	.LVL63:
+ 266:Core/Src/utils.c ****         if (fabs(angleErr) <= ANGLE_EPS)
+ 820              		.loc 1 266 15 discriminator 1 view .LVU188
+ 821 009e 39EEC00A 		vsub.f32	s0, s19, s0
+ 822              	.LVL64:
+ 267:Core/Src/utils.c ****             break;
+ 823              		.loc 1 267 9 is_stmt 1 view .LVU189
+ 267:Core/Src/utils.c ****             break;
+ 824              		.loc 1 267 13 is_stmt 0 view .LVU190
+ 825 00a2 B0EEC07A 		vabs.f32	s14, s0
+ 267:Core/Src/utils.c ****             break;
+ 826              		.loc 1 267 12 view .LVU191
+ 827 00a6 DFED3C7A 		vldr.32	s15, .L72+24
+ 828 00aa B4EEE77A 		vcmpe.f32	s14, s15
+ 829 00ae F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 830 00b2 5FD9     		bls	.L57
+ 271:Core/Src/utils.c ****         // Задаем скорость через ошибку по углу (положению)
+ 831              		.loc 1 271 9 is_stmt 1 view .LVU192
+ 271:Core/Src/utils.c ****         // Задаем скорость через ошибку по углу (положению)
+ 832              		.loc 1 271 23 is_stmt 0 view .LVU193
+ 833 00b4 F0EE680A 		vmov.f32	s1, s17
+ 834 00b8 3248     		ldr	r0, .L72+4
+ 835 00ba FFF7FEFF 		bl	PID
+ 836              	.LVL65:
+ 271:Core/Src/utils.c ****         // Задаем скорость через ошибку по углу (положению)
+ 837              		.loc 1 271 23 view .LVU194
+ 838 00be B0EE409A 		vmov.f32	s18, s0
+ 839              	.LVL66:
+ 273:Core/Src/utils.c ****         // ПИД для прохождения колесами одинакового расст�
+ 840              		.loc 1 273 9 is_stmt 1 view .LVU195
+ 273:Core/Src/utils.c ****         // ПИД для прохождения колесами одинакового расст�
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 24
+
+
+ 841              		.loc 1 273 25 is_stmt 0 view .LVU196
+ 842 00c2 F0EE680A 		vmov.f32	s1, s17
+ 843 00c6 B0EEC00A 		vabs.f32	s0, s0
+ 844              	.LVL67:
+ 273:Core/Src/utils.c ****         // ПИД для прохождения колесами одинакового расст�
+ 845              		.loc 1 273 25 view .LVU197
+ 846 00ca 2D48     		ldr	r0, .L72
+ 847 00cc FFF7FEFF 		bl	PID
+ 848              	.LVL68:
+ 849 00d0 B0EE408A 		vmov.f32	s16, s0
+ 850              	.LVL69:
+ 275:Core/Src/utils.c ****                          left_encoder_ticks - right_encoder_ticks,
+ 851              		.loc 1 275 9 is_stmt 1 view .LVU198
+ 276:Core/Src/utils.c ****                          dt);
+ 852              		.loc 1 276 45 is_stmt 0 view .LVU199
+ 853 00d4 2D4B     		ldr	r3, .L72+12
+ 854 00d6 1B88     		ldrh	r3, [r3]
+ 855 00d8 9BB2     		uxth	r3, r3
+ 856 00da 2D4A     		ldr	r2, .L72+16
+ 857 00dc 1288     		ldrh	r2, [r2]
+ 858 00de 92B2     		uxth	r2, r2
+ 859 00e0 9B1A     		subs	r3, r3, r2
+ 860 00e2 00EE103A 		vmov	s0, r3	@ int
+ 861              	.LVL70:
+ 275:Core/Src/utils.c ****                          left_encoder_ticks - right_encoder_ticks,
+ 862              		.loc 1 275 22 view .LVU200
+ 863 00e6 F0EE680A 		vmov.f32	s1, s17
+ 864 00ea B8EEC00A 		vcvt.f32.s32	s0, s0
+ 865 00ee 2648     		ldr	r0, .L72+8
+ 866 00f0 FFF7FEFF 		bl	PID
+ 867              	.LVL71:
+ 280:Core/Src/utils.c ****         float pwmR = basePWM + sync;
+ 868              		.loc 1 280 9 is_stmt 1 view .LVU201
+ 281:Core/Src/utils.c **** 
+ 869              		.loc 1 281 9 view .LVU202
+ 281:Core/Src/utils.c **** 
+ 870              		.loc 1 281 15 is_stmt 0 view .LVU203
+ 871 00f4 38EE00AA 		vadd.f32	s20, s16, s0
+ 872              	.LVL72:
+ 284:Core/Src/utils.c ****         pwmR = constrainf(pwmR, PWM_MIN, 650);
+ 873              		.loc 1 284 9 is_stmt 1 view .LVU204
+ 284:Core/Src/utils.c ****         pwmR = constrainf(pwmR, PWM_MIN, 650);
+ 874              		.loc 1 284 16 is_stmt 0 view .LVU205
+ 875 00f8 40F28A21 		movw	r1, #650
+ 876 00fc 4FF41B70 		mov	r0, #620
+ 877 0100 38EE400A 		vsub.f32	s0, s16, s0
+ 878              	.LVL73:
+ 284:Core/Src/utils.c ****         pwmR = constrainf(pwmR, PWM_MIN, 650);
+ 879              		.loc 1 284 16 view .LVU206
+ 880 0104 FFF7FEFF 		bl	constrainf
+ 881              	.LVL74:
+ 284:Core/Src/utils.c ****         pwmR = constrainf(pwmR, PWM_MIN, 650);
+ 882              		.loc 1 284 16 view .LVU207
+ 883 0108 08EE900A 		vmov	s17, r0	@ int
+ 884              	.LVL75:
+ 284:Core/Src/utils.c ****         pwmR = constrainf(pwmR, PWM_MIN, 650);
+ 885              		.loc 1 284 14 discriminator 1 view .LVU208
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 25
+
+
+ 886 010c F8EEE88A 		vcvt.f32.s32	s17, s17
+ 887              	.LVL76:
+ 285:Core/Src/utils.c **** 
+ 888              		.loc 1 285 9 is_stmt 1 view .LVU209
+ 285:Core/Src/utils.c **** 
+ 889              		.loc 1 285 16 is_stmt 0 view .LVU210
+ 890 0110 40F28A21 		movw	r1, #650
+ 891 0114 4FF41B70 		mov	r0, #620
+ 892 0118 B0EE4A0A 		vmov.f32	s0, s20
+ 893 011c FFF7FEFF 		bl	constrainf
+ 894              	.LVL77:
+ 895 0120 08EE100A 		vmov	s16, r0	@ int
+ 896              	.LVL78:
+ 285:Core/Src/utils.c **** 
+ 897              		.loc 1 285 14 discriminator 1 view .LVU211
+ 898 0124 B8EEC88A 		vcvt.f32.s32	s16, s16
+ 899              	.LVL79:
+ 288:Core/Src/utils.c ****             pwmL = PWM_DEADZONE;
+ 900              		.loc 1 288 9 is_stmt 1 view .LVU212
+ 288:Core/Src/utils.c ****             pwmL = PWM_DEADZONE;
+ 901              		.loc 1 288 12 is_stmt 0 view .LVU213
+ 902 0128 F5EEC08A 		vcmpe.f32	s17, #0
+ 903 012c F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 904 0130 08DD     		ble	.L58
+ 288:Core/Src/utils.c ****             pwmL = PWM_DEADZONE;
+ 905              		.loc 1 288 22 discriminator 1 view .LVU214
+ 906 0132 DFED1A7A 		vldr.32	s15, .L72+28
+ 907 0136 F4EEE78A 		vcmpe.f32	s17, s15
+ 908 013a F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 909 013e 01D5     		bpl	.L58
+ 289:Core/Src/utils.c ****         if (pwmR > 0 && pwmR < PWM_DEADZONE)
+ 910              		.loc 1 289 18 view .LVU215
+ 911 0140 F0EE678A 		vmov.f32	s17, s15
+ 912              	.LVL80:
+ 913              	.L58:
+ 290:Core/Src/utils.c ****             pwmR = PWM_DEADZONE;
+ 914              		.loc 1 290 9 is_stmt 1 view .LVU216
+ 290:Core/Src/utils.c ****             pwmR = PWM_DEADZONE;
+ 915              		.loc 1 290 12 is_stmt 0 view .LVU217
+ 916 0144 B5EEC08A 		vcmpe.f32	s16, #0
+ 917 0148 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 918 014c 7FF777AF 		ble	.L60
+ 290:Core/Src/utils.c ****             pwmR = PWM_DEADZONE;
+ 919              		.loc 1 290 22 discriminator 1 view .LVU218
+ 920 0150 DFED127A 		vldr.32	s15, .L72+28
+ 921 0154 B4EEE78A 		vcmpe.f32	s16, s15
+ 922 0158 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 923 015c 7FF56FAF 		bpl	.L60
+ 291:Core/Src/utils.c **** 
+ 924              		.loc 1 291 18 view .LVU219
+ 925 0160 B0EE678A 		vmov.f32	s16, s15
+ 926              	.LVL81:
+ 291:Core/Src/utils.c **** 
+ 927              		.loc 1 291 18 view .LVU220
+ 928 0164 6BE7     		b	.L60
+ 929              	.LVL82:
+ 930              	.L70:
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 26
+
+
+ 301:Core/Src/utils.c ****             right_dir(2);
+ 931              		.loc 1 301 13 is_stmt 1 view .LVU221
+ 932 0166 0120     		movs	r0, #1
+ 933 0168 FFF7FEFF 		bl	left_dir
+ 934              	.LVL83:
+ 302:Core/Src/utils.c ****         }
+ 935              		.loc 1 302 13 view .LVU222
+ 936 016c 0220     		movs	r0, #2
+ 937 016e FFF7FEFF 		bl	right_dir
+ 938              	.LVL84:
+ 939 0172 70E7     		b	.L64
+ 940              	.LVL85:
+ 941              	.L57:
+ 302:Core/Src/utils.c ****         }
+ 942              		.loc 1 302 13 is_stmt 0 view .LVU223
+ 943              	.LBE21:
+ 307:Core/Src/utils.c ****     }
+ 308:Core/Src/utils.c ****     // Останавливаем моторы робота
+ 309:Core/Src/utils.c ****     stopMotors();
+ 944              		.loc 1 309 5 is_stmt 1 view .LVU224
+ 945 0174 FFF7FEFF 		bl	stopMotors
+ 946              	.LVL86:
+ 310:Core/Src/utils.c **** }
+ 947              		.loc 1 310 1 is_stmt 0 view .LVU225
+ 948 0178 BDEC068B 		vldm	sp!, {d8-d10}
+ 949              	.LCFI12:
+ 950              		.cfi_restore 84
+ 951              		.cfi_restore 85
+ 952              		.cfi_restore 82
+ 953              		.cfi_restore 83
+ 954              		.cfi_restore 80
+ 955              		.cfi_restore 81
+ 956              		.cfi_def_cfa_offset 8
+ 957 017c 10BD     		pop	{r4, pc}
+ 958              	.LVL87:
+ 959              	.L73:
+ 960              		.loc 1 310 1 view .LVU226
+ 961 017e 00BF     		.align	2
+ 962              	.L72:
+ 963 0180 00000000 		.word	pidSpeed
+ 964 0184 00000000 		.word	pidYaw
+ 965 0188 00000000 		.word	pidSync
+ 966 018c 00000000 		.word	left_encoder_ticks
+ 967 0190 00000000 		.word	right_encoder_ticks
+ 968 0194 00007A44 		.word	1148846080
+ 969 0198 CDCCCC3D 		.word	1036831949
+ 970 019c 00001644 		.word	1142292480
+ 971              		.cfi_endproc
+ 972              	.LFE142:
+ 974              		.section	.text.moveStraight,"ax",%progbits
+ 975              		.align	1
+ 976              		.global	moveStraight
+ 977              		.syntax unified
+ 978              		.thumb
+ 979              		.thumb_func
+ 981              	moveStraight:
+ 982              	.LVL88:
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 27
+
+
+ 983              	.LFB141:
+ 144:Core/Src/utils.c **** 
+ 984              		.loc 1 144 1 is_stmt 1 view -0
+ 985              		.cfi_startproc
+ 986              		@ args = 0, pretend = 0, frame = 0
+ 987              		@ frame_needed = 0, uses_anonymous_args = 0
+ 144:Core/Src/utils.c **** 
+ 988              		.loc 1 144 1 is_stmt 0 view .LVU228
+ 989 0000 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 990              	.LCFI13:
+ 991              		.cfi_def_cfa_offset 24
+ 992              		.cfi_offset 3, -24
+ 993              		.cfi_offset 4, -20
+ 994              		.cfi_offset 5, -16
+ 995              		.cfi_offset 6, -12
+ 996              		.cfi_offset 7, -8
+ 997              		.cfi_offset 14, -4
+ 998 0002 2DED048B 		vpush.64	{d8, d9}
+ 999              	.LCFI14:
+ 1000              		.cfi_def_cfa_offset 40
+ 1001              		.cfi_offset 80, -40
+ 1002              		.cfi_offset 81, -36
+ 1003              		.cfi_offset 82, -32
+ 1004              		.cfi_offset 83, -28
+ 1005 0006 B0EE408A 		vmov.f32	s16, s0
+ 147:Core/Src/utils.c ****     PID_Reset(&pidSync);
+ 1006              		.loc 1 147 5 is_stmt 1 view .LVU229
+ 1007 000a 5948     		ldr	r0, .L81
+ 1008 000c FFF7FEFF 		bl	PID_Reset
+ 1009              	.LVL89:
+ 148:Core/Src/utils.c **** 
+ 1010              		.loc 1 148 5 view .LVU230
+ 1011 0010 5848     		ldr	r0, .L81+4
+ 1012 0012 FFF7FEFF 		bl	PID_Reset
+ 1013              	.LVL90:
+ 151:Core/Src/utils.c ****     left_encoder_ticks = 0;
+ 1014              		.loc 1 151 5 view .LVU231
+ 1015              	.LBB22:
+ 1016              	.LBI22:
+ 140:CMSIS/Include/cmsis_gcc.h **** {
+ 1017              		.loc 2 140 27 view .LVU232
+ 1018              	.LBB23:
+ 1019              		.loc 2 142 3 view .LVU233
+ 1020              		.syntax unified
+ 1021              	@ 142 "CMSIS/Include/cmsis_gcc.h" 1
+ 1022 0016 72B6     		cpsid i
+ 1023              	@ 0 "" 2
+ 1024              		.thumb
+ 1025              		.syntax unified
+ 1026              	.LBE23:
+ 1027              	.LBE22:
+ 152:Core/Src/utils.c ****     right_encoder_ticks = 0;
+ 1028              		.loc 1 152 5 view .LVU234
+ 152:Core/Src/utils.c ****     right_encoder_ticks = 0;
+ 1029              		.loc 1 152 24 is_stmt 0 view .LVU235
+ 1030 0018 0023     		movs	r3, #0
+ 1031 001a 574A     		ldr	r2, .L81+8
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 28
+
+
+ 1032 001c 1380     		strh	r3, [r2]	@ movhi
+ 153:Core/Src/utils.c ****     __enable_irq();
+ 1033              		.loc 1 153 5 is_stmt 1 view .LVU236
+ 153:Core/Src/utils.c ****     __enable_irq();
+ 1034              		.loc 1 153 25 is_stmt 0 view .LVU237
+ 1035 001e 574A     		ldr	r2, .L81+12
+ 1036 0020 1380     		strh	r3, [r2]	@ movhi
+ 154:Core/Src/utils.c **** 
+ 1037              		.loc 1 154 5 is_stmt 1 view .LVU238
+ 1038              	.LBB24:
+ 1039              	.LBI24:
+ 129:CMSIS/Include/cmsis_gcc.h **** {
+ 1040              		.loc 2 129 27 view .LVU239
+ 1041              	.LBB25:
+ 131:CMSIS/Include/cmsis_gcc.h **** }
+ 1042              		.loc 2 131 3 view .LVU240
+ 1043              		.syntax unified
+ 1044              	@ 131 "CMSIS/Include/cmsis_gcc.h" 1
+ 1045 0022 62B6     		cpsie i
+ 1046              	@ 0 "" 2
+ 1047              		.thumb
+ 1048              		.syntax unified
+ 1049              	.LBE25:
+ 1050              	.LBE24:
+ 157:Core/Src/utils.c ****     float startYaw = MPU_GetYaw();
+ 1051              		.loc 1 157 5 view .LVU241
+ 1052 0024 FFF7FEFF 		bl	MPU_Update
+ 1053              	.LVL91:
+ 158:Core/Src/utils.c **** 
+ 1054              		.loc 1 158 5 view .LVU242
+ 158:Core/Src/utils.c **** 
+ 1055              		.loc 1 158 22 is_stmt 0 view .LVU243
+ 1056 0028 FFF7FEFF 		bl	MPU_GetYaw
+ 1057              	.LVL92:
+ 1058 002c B0EE409A 		vmov.f32	s18, s0
+ 1059              	.LVL93:
+ 161:Core/Src/utils.c ****         (distance_cm * 10.0f / (2 * PI * WHEEL_DIAMETER)) * PULSES_PER_REV;
+ 1060              		.loc 1 161 5 is_stmt 1 view .LVU244
+ 162:Core/Src/utils.c **** 
+ 1061              		.loc 1 162 22 is_stmt 0 view .LVU245
+ 1062 0030 F2EE047A 		vmov.f32	s15, #1.0e+1
+ 1063 0034 28EE278A 		vmul.f32	s16, s16, s15
+ 1064              	.LVL94:
+ 162:Core/Src/utils.c **** 
+ 1065              		.loc 1 162 30 view .LVU246
+ 1066 0038 9FED517A 		vldr.32	s14, .L81+16
+ 1067 003c C8EE077A 		vdiv.f32	s15, s16, s14
+ 162:Core/Src/utils.c **** 
+ 1068              		.loc 1 162 59 view .LVU247
+ 1069 0040 9FED507A 		vldr.32	s14, .L81+20
+ 1070 0044 67EE877A 		vmul.f32	s15, s15, s14
+ 161:Core/Src/utils.c ****         (distance_cm * 10.0f / (2 * PI * WHEEL_DIAMETER)) * PULSES_PER_REV;
+ 1071              		.loc 1 161 14 view .LVU248
+ 1072 0048 FCEEE77A 		vcvt.u32.f32	s15, s15
+ 1073 004c 17EE906A 		vmov	r6, s15	@ int
+ 1074              	.LVL95:
+ 165:Core/Src/utils.c **** 
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 29
+
+
+ 1075              		.loc 1 165 5 is_stmt 1 view .LVU249
+ 165:Core/Src/utils.c **** 
+ 1076              		.loc 1 165 25 is_stmt 0 view .LVU250
+ 1077 0050 FFF7FEFF 		bl	millis
+ 1078              	.LVL96:
+ 165:Core/Src/utils.c **** 
+ 1079              		.loc 1 165 25 view .LVU251
+ 1080 0054 0746     		mov	r7, r0
+ 1081              	.LVL97:
+ 165:Core/Src/utils.c **** 
+ 1082              		.loc 1 165 25 view .LVU252
+ 1083 0056 58E0     		b	.L75
+ 1084              	.LVL98:
+ 1085              	.L79:
+ 1086              	.LBB26:
+ 188:Core/Src/utils.c **** 
+ 1087              		.loc 1 188 15 view .LVU253
+ 1088 0058 9FED4B8A 		vldr.32	s16, .L81+24
+ 1089              	.L78:
+ 1090              	.LVL99:
+ 200:Core/Src/utils.c ****         lastTime = millis();
+ 1091              		.loc 1 200 9 is_stmt 1 view .LVU254
+ 200:Core/Src/utils.c ****         lastTime = millis();
+ 1092              		.loc 1 200 21 is_stmt 0 view .LVU255
+ 1093 005c FFF7FEFF 		bl	millis
+ 1094              	.LVL100:
+ 200:Core/Src/utils.c ****         lastTime = millis();
+ 1095              		.loc 1 200 30 discriminator 1 view .LVU256
+ 1096 0060 C01B     		subs	r0, r0, r7
+ 200:Core/Src/utils.c ****         lastTime = millis();
+ 1097              		.loc 1 200 42 discriminator 1 view .LVU257
+ 1098 0062 07EE900A 		vmov	s15, r0	@ int
+ 1099 0066 F8EE677A 		vcvt.f32.u32	s15, s15
+ 200:Core/Src/utils.c ****         lastTime = millis();
+ 1100              		.loc 1 200 15 discriminator 1 view .LVU258
+ 1101 006a 9FED487A 		vldr.32	s14, .L81+28
+ 1102 006e C7EE879A 		vdiv.f32	s19, s15, s14
+ 1103              	.LVL101:
+ 201:Core/Src/utils.c **** 
+ 1104              		.loc 1 201 9 is_stmt 1 view .LVU259
+ 201:Core/Src/utils.c **** 
+ 1105              		.loc 1 201 20 is_stmt 0 view .LVU260
+ 1106 0072 FFF7FEFF 		bl	millis
+ 1107              	.LVL102:
+ 1108 0076 0746     		mov	r7, r0
+ 1109              	.LVL103:
+ 205:Core/Src/utils.c ****         float yawCorr = PID(&pidYaw,
+ 1110              		.loc 1 205 9 is_stmt 1 view .LVU261
+ 1111 0078 FFF7FEFF 		bl	MPU_Update
+ 1112              	.LVL104:
+ 206:Core/Src/utils.c ****                             startYaw - MPU_GetYaw(), dt);
+ 1113              		.loc 1 206 9 view .LVU262
+ 207:Core/Src/utils.c ****         // ПИД контролирующий одинаковое ли расстояние пр�
+ 1114              		.loc 1 207 40 is_stmt 0 view .LVU263
+ 1115 007c FFF7FEFF 		bl	MPU_GetYaw
+ 1116              	.LVL105:
+ 206:Core/Src/utils.c ****                             startYaw - MPU_GetYaw(), dt);
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 30
+
+
+ 1117              		.loc 1 206 25 view .LVU264
+ 1118 0080 F0EE690A 		vmov.f32	s1, s19
+ 1119 0084 39EE400A 		vsub.f32	s0, s18, s0
+ 1120 0088 3948     		ldr	r0, .L81
+ 1121 008a FFF7FEFF 		bl	PID
+ 1122              	.LVL106:
+ 1123 008e F0EE408A 		vmov.f32	s17, s0
+ 1124              	.LVL107:
+ 209:Core/Src/utils.c **** 
+ 1125              		.loc 1 209 9 is_stmt 1 view .LVU265
+ 209:Core/Src/utils.c **** 
+ 1126              		.loc 1 209 42 is_stmt 0 view .LVU266
+ 1127 0092 631B     		subs	r3, r4, r5
+ 1128 0094 00EE103A 		vmov	s0, r3	@ int
+ 1129              	.LVL108:
+ 209:Core/Src/utils.c **** 
+ 1130              		.loc 1 209 26 view .LVU267
+ 1131 0098 F0EE690A 		vmov.f32	s1, s19
+ 1132 009c B8EEC00A 		vcvt.f32.s32	s0, s0
+ 1133 00a0 3448     		ldr	r0, .L81+4
+ 1134 00a2 FFF7FEFF 		bl	PID
+ 1135              	.LVL109:
+ 212:Core/Src/utils.c ****         float pwmR = basePWM + yawCorr + syncCorr;
+ 1136              		.loc 1 212 9 is_stmt 1 view .LVU268
+ 212:Core/Src/utils.c ****         float pwmR = basePWM + yawCorr + syncCorr;
+ 1137              		.loc 1 212 30 is_stmt 0 view .LVU269
+ 1138 00a6 78EE687A 		vsub.f32	s15, s16, s17
+ 1139              	.LVL110:
+ 213:Core/Src/utils.c **** 
+ 1140              		.loc 1 213 9 is_stmt 1 view .LVU270
+ 213:Core/Src/utils.c **** 
+ 1141              		.loc 1 213 30 is_stmt 0 view .LVU271
+ 1142 00aa 38EE288A 		vadd.f32	s16, s16, s17
+ 1143              	.LVL111:
+ 213:Core/Src/utils.c **** 
+ 1144              		.loc 1 213 15 view .LVU272
+ 1145 00ae 38EE008A 		vadd.f32	s16, s16, s0
+ 1146              	.LVL112:
+ 216:Core/Src/utils.c ****         pwmR = constrainf(pwmR, PWM_MIN, 650);
+ 1147              		.loc 1 216 9 is_stmt 1 view .LVU273
+ 216:Core/Src/utils.c ****         pwmR = constrainf(pwmR, PWM_MIN, 650);
+ 1148              		.loc 1 216 16 is_stmt 0 view .LVU274
+ 1149 00b2 40F28A21 		movw	r1, #650
+ 1150 00b6 4FF41B70 		mov	r0, #620
+ 1151 00ba 37EEC00A 		vsub.f32	s0, s15, s0
+ 1152              	.LVL113:
+ 216:Core/Src/utils.c ****         pwmR = constrainf(pwmR, PWM_MIN, 650);
+ 1153              		.loc 1 216 16 view .LVU275
+ 1154 00be FFF7FEFF 		bl	constrainf
+ 1155              	.LVL114:
+ 216:Core/Src/utils.c ****         pwmR = constrainf(pwmR, PWM_MIN, 650);
+ 1156              		.loc 1 216 16 view .LVU276
+ 1157 00c2 08EE900A 		vmov	s17, r0	@ int
+ 1158              	.LVL115:
+ 216:Core/Src/utils.c ****         pwmR = constrainf(pwmR, PWM_MIN, 650);
+ 1159              		.loc 1 216 14 discriminator 1 view .LVU277
+ 1160 00c6 F8EEE88A 		vcvt.f32.s32	s17, s17
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 31
+
+
+ 1161              	.LVL116:
+ 217:Core/Src/utils.c **** 
+ 1162              		.loc 1 217 9 is_stmt 1 view .LVU278
+ 217:Core/Src/utils.c **** 
+ 1163              		.loc 1 217 16 is_stmt 0 view .LVU279
+ 1164 00ca 40F28A21 		movw	r1, #650
+ 1165 00ce 4FF41B70 		mov	r0, #620
+ 1166 00d2 B0EE480A 		vmov.f32	s0, s16
+ 1167 00d6 FFF7FEFF 		bl	constrainf
+ 1168              	.LVL117:
+ 1169 00da 08EE100A 		vmov	s16, r0	@ int
+ 1170              	.LVL118:
+ 217:Core/Src/utils.c **** 
+ 1171              		.loc 1 217 14 discriminator 1 view .LVU280
+ 1172 00de B8EEC88A 		vcvt.f32.s32	s16, s16
+ 1173              	.LVL119:
+ 219:Core/Src/utils.c ****         right_dir(1);
+ 1174              		.loc 1 219 9 is_stmt 1 view .LVU281
+ 1175 00e2 0120     		movs	r0, #1
+ 1176 00e4 FFF7FEFF 		bl	left_dir
+ 1177              	.LVL120:
+ 220:Core/Src/utils.c ****         PWM_Left(pwmL);
+ 1178              		.loc 1 220 9 view .LVU282
+ 1179 00e8 0120     		movs	r0, #1
+ 1180 00ea FFF7FEFF 		bl	right_dir
+ 1181              	.LVL121:
+ 221:Core/Src/utils.c ****         PWM_Right(pwmR);
+ 1182              		.loc 1 221 9 view .LVU283
+ 1183 00ee FCEEE88A 		vcvt.u32.f32	s17, s17
+ 1184              	.LVL122:
+ 221:Core/Src/utils.c ****         PWM_Right(pwmR);
+ 1185              		.loc 1 221 9 is_stmt 0 view .LVU284
+ 1186 00f2 18EE903A 		vmov	r3, s17	@ int
+ 1187 00f6 98B2     		uxth	r0, r3
+ 1188 00f8 FFF7FEFF 		bl	PWM_Left
+ 1189              	.LVL123:
+ 222:Core/Src/utils.c ****     }
+ 1190              		.loc 1 222 9 is_stmt 1 view .LVU285
+ 1191 00fc BCEEC88A 		vcvt.u32.f32	s16, s16
+ 1192              	.LVL124:
+ 222:Core/Src/utils.c ****     }
+ 1193              		.loc 1 222 9 is_stmt 0 view .LVU286
+ 1194 0100 18EE103A 		vmov	r3, s16	@ int
+ 1195 0104 98B2     		uxth	r0, r3
+ 1196 0106 FFF7FEFF 		bl	PWM_Right
+ 1197              	.LVL125:
+ 1198              	.L75:
+ 222:Core/Src/utils.c ****     }
+ 1199              		.loc 1 222 9 view .LVU287
+ 1200              	.LBE26:
+ 167:Core/Src/utils.c ****     {
+ 1201              		.loc 1 167 5 is_stmt 1 view .LVU288
+ 1202              	.LBB31:
+ 170:Core/Src/utils.c ****             continue;
+ 1203              		.loc 1 170 9 view .LVU289
+ 170:Core/Src/utils.c ****             continue;
+ 1204              		.loc 1 170 13 is_stmt 0 view .LVU290
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 32
+
+
+ 1205 010a FFF7FEFF 		bl	millis
+ 1206              	.LVL126:
+ 170:Core/Src/utils.c ****             continue;
+ 1207              		.loc 1 170 12 discriminator 1 view .LVU291
+ 1208 010e B842     		cmp	r0, r7
+ 1209 0110 FBD0     		beq	.L75
+ 174:Core/Src/utils.c ****         uint16_t L = left_encoder_ticks;
+ 1210              		.loc 1 174 9 is_stmt 1 view .LVU292
+ 1211              	.LBB27:
+ 1212              	.LBI27:
+ 140:CMSIS/Include/cmsis_gcc.h **** {
+ 1213              		.loc 2 140 27 view .LVU293
+ 1214              	.LBB28:
+ 1215              		.loc 2 142 3 view .LVU294
+ 1216              		.syntax unified
+ 1217              	@ 142 "CMSIS/Include/cmsis_gcc.h" 1
+ 1218 0112 72B6     		cpsid i
+ 1219              	@ 0 "" 2
+ 1220              		.thumb
+ 1221              		.syntax unified
+ 1222              	.LBE28:
+ 1223              	.LBE27:
+ 175:Core/Src/utils.c ****         uint16_t R = right_encoder_ticks;
+ 1224              		.loc 1 175 9 view .LVU295
+ 175:Core/Src/utils.c ****         uint16_t R = right_encoder_ticks;
+ 1225              		.loc 1 175 18 is_stmt 0 view .LVU296
+ 1226 0114 184B     		ldr	r3, .L81+8
+ 1227 0116 1C88     		ldrh	r4, [r3]
+ 1228 0118 A4B2     		uxth	r4, r4
+ 1229              	.LVL127:
+ 176:Core/Src/utils.c ****         __enable_irq();
+ 1230              		.loc 1 176 9 is_stmt 1 view .LVU297
+ 176:Core/Src/utils.c ****         __enable_irq();
+ 1231              		.loc 1 176 18 is_stmt 0 view .LVU298
+ 1232 011a 184B     		ldr	r3, .L81+12
+ 1233 011c 1D88     		ldrh	r5, [r3]
+ 1234 011e ADB2     		uxth	r5, r5
+ 1235              	.LVL128:
+ 177:Core/Src/utils.c ****         
+ 1236              		.loc 1 177 9 is_stmt 1 view .LVU299
+ 1237              	.LBB29:
+ 1238              	.LBI29:
+ 129:CMSIS/Include/cmsis_gcc.h **** {
+ 1239              		.loc 2 129 27 view .LVU300
+ 1240              	.LBB30:
+ 131:CMSIS/Include/cmsis_gcc.h **** }
+ 1241              		.loc 2 131 3 view .LVU301
+ 1242              		.syntax unified
+ 1243              	@ 131 "CMSIS/Include/cmsis_gcc.h" 1
+ 1244 0120 62B6     		cpsie i
+ 1245              	@ 0 "" 2
+ 1246              		.thumb
+ 1247              		.syntax unified
+ 1248              	.LBE30:
+ 1249              	.LBE29:
+ 179:Core/Src/utils.c **** 
+ 1250              		.loc 1 179 9 view .LVU302
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 33
+
+
+ 179:Core/Src/utils.c **** 
+ 1251              		.loc 1 179 38 is_stmt 0 view .LVU303
+ 1252 0122 6319     		adds	r3, r4, r5
+ 1253 0124 07EE903A 		vmov	s15, r3	@ int
+ 179:Core/Src/utils.c **** 
+ 1254              		.loc 1 179 43 view .LVU304
+ 1255 0128 F8EEE77A 		vcvt.f32.s32	s15, s15
+ 1256 012c B6EE007A 		vmov.f32	s14, #5.0e-1
+ 1257 0130 67EE877A 		vmul.f32	s15, s15, s14
+ 179:Core/Src/utils.c **** 
+ 1258              		.loc 1 179 18 view .LVU305
+ 1259 0134 FCEEE77A 		vcvt.u32.f32	s15, s15
+ 1260 0138 17EE903A 		vmov	r3, s15	@ int
+ 1261 013c 9BB2     		uxth	r3, r3
+ 1262              	.LVL129:
+ 181:Core/Src/utils.c **** 
+ 1263              		.loc 1 181 9 is_stmt 1 view .LVU306
+ 183:Core/Src/utils.c ****         {
+ 1264              		.loc 1 183 9 view .LVU307
+ 183:Core/Src/utils.c ****         {
+ 1265              		.loc 1 183 12 is_stmt 0 view .LVU308
+ 1266 013e F31A     		subs	r3, r6, r3
+ 1267              	.LVL130:
+ 183:Core/Src/utils.c ****         {
+ 1268              		.loc 1 183 12 view .LVU309
+ 1269 0140 04D0     		beq	.L77
+ 188:Core/Src/utils.c **** 
+ 1270              		.loc 1 188 9 is_stmt 1 view .LVU310
+ 1271              	.LVL131:
+ 190:Core/Src/utils.c ****         {
+ 1272              		.loc 1 190 9 view .LVU311
+ 190:Core/Src/utils.c ****         {
+ 1273              		.loc 1 190 12 is_stmt 0 view .LVU312
+ 1274 0142 952B     		cmp	r3, #149
+ 1275 0144 88DC     		bgt	.L79
+ 192:Core/Src/utils.c ****         }
+ 1276              		.loc 1 192 21 view .LVU313
+ 1277 0146 9FED128A 		vldr.32	s16, .L81+32
+ 1278 014a 87E7     		b	.L78
+ 1279              	.LVL132:
+ 1280              	.L77:
+ 192:Core/Src/utils.c ****         }
+ 1281              		.loc 1 192 21 view .LVU314
+ 1282              	.LBE31:
+ 226:Core/Src/utils.c ****     delay_ms(200);
+ 1283              		.loc 1 226 5 is_stmt 1 view .LVU315
+ 1284 014c FFF7FEFF 		bl	stopMotors
+ 1285              	.LVL133:
+ 227:Core/Src/utils.c ****     MPU_Update();
+ 1286              		.loc 1 227 5 view .LVU316
+ 1287 0150 C820     		movs	r0, #200
+ 1288 0152 FFF7FEFF 		bl	delay_ms
+ 1289              	.LVL134:
+ 228:Core/Src/utils.c ****     turnByAngle(normalizeAngle(startYaw - MPU_GetYaw()));
+ 1290              		.loc 1 228 5 view .LVU317
+ 1291 0156 FFF7FEFF 		bl	MPU_Update
+ 1292              	.LVL135:
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 34
+
+
+ 229:Core/Src/utils.c **** }
+ 1293              		.loc 1 229 5 view .LVU318
+ 229:Core/Src/utils.c **** }
+ 1294              		.loc 1 229 43 is_stmt 0 view .LVU319
+ 1295 015a FFF7FEFF 		bl	MPU_GetYaw
+ 1296              	.LVL136:
+ 229:Core/Src/utils.c **** }
+ 1297              		.loc 1 229 5 discriminator 1 view .LVU320
+ 1298 015e 39EE400A 		vsub.f32	s0, s18, s0
+ 1299 0162 FFF7FEFF 		bl	normalizeAngle
+ 1300              	.LVL137:
+ 229:Core/Src/utils.c **** }
+ 1301              		.loc 1 229 5 discriminator 2 view .LVU321
+ 1302 0166 FFF7FEFF 		bl	turnByAngle
+ 1303              	.LVL138:
+ 230:Core/Src/utils.c **** 
+ 1304              		.loc 1 230 1 view .LVU322
+ 1305 016a BDEC048B 		vldm	sp!, {d8-d9}
+ 1306              	.LCFI15:
+ 1307              		.cfi_restore 82
+ 1308              		.cfi_restore 83
+ 1309              		.cfi_restore 80
+ 1310              		.cfi_restore 81
+ 1311              		.cfi_def_cfa_offset 24
+ 1312              	.LVL139:
+ 230:Core/Src/utils.c **** 
+ 1313              		.loc 1 230 1 view .LVU323
+ 1314 016e F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 1315              	.LVL140:
+ 1316              	.L82:
+ 230:Core/Src/utils.c **** 
+ 1317              		.loc 1 230 1 view .LVU324
+ 1318              		.align	2
+ 1319              	.L81:
+ 1320 0170 00000000 		.word	pidYaw
+ 1321 0174 00000000 		.word	pidSync
+ 1322 0178 00000000 		.word	left_encoder_ticks
+ 1323 017c 00000000 		.word	right_encoder_ticks
+ 1324 0180 997CD243 		.word	1137867929
+ 1325 0184 00002042 		.word	1109393408
+ 1326 0188 00801D44 		.word	1142784000
+ 1327 018c 00007A44 		.word	1148846080
+ 1328 0190 00001B44 		.word	1142620160
+ 1329              		.cfi_endproc
+ 1330              	.LFE141:
+ 1332              		.section	.text.Traject,"ax",%progbits
+ 1333              		.align	1
+ 1334              		.global	Traject
+ 1335              		.syntax unified
+ 1336              		.thumb
+ 1337              		.thumb_func
+ 1339              	Traject:
+ 1340              	.LFB143:
+ 311:Core/Src/utils.c **** 
+ 312:Core/Src/utils.c **** 
+ 313:Core/Src/utils.c **** 
+ 314:Core/Src/utils.c **** void Traject()
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 35
+
+
+ 315:Core/Src/utils.c **** {
+ 1341              		.loc 1 315 1 is_stmt 1 view -0
+ 1342              		.cfi_startproc
+ 1343              		@ args = 0, pretend = 0, frame = 0
+ 1344              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1345 0000 08B5     		push	{r3, lr}
+ 1346              	.LCFI16:
+ 1347              		.cfi_def_cfa_offset 8
+ 1348              		.cfi_offset 3, -8
+ 1349              		.cfi_offset 14, -4
+ 1350 0002 2DED048B 		vpush.64	{d8, d9}
+ 1351              	.LCFI17:
+ 1352              		.cfi_def_cfa_offset 24
+ 1353              		.cfi_offset 80, -24
+ 1354              		.cfi_offset 81, -20
+ 1355              		.cfi_offset 82, -16
+ 1356              		.cfi_offset 83, -12
+ 316:Core/Src/utils.c ****     MPU_Calibrate();
+ 1357              		.loc 1 316 5 view .LVU326
+ 1358 0006 FFF7FEFF 		bl	MPU_Calibrate
+ 1359              	.LVL141:
+ 317:Core/Src/utils.c ****     MPU_Update();
+ 1360              		.loc 1 317 5 view .LVU327
+ 1361 000a FFF7FEFF 		bl	MPU_Update
+ 1362              	.LVL142:
+ 318:Core/Src/utils.c ****     moveStraight(60.0f);
+ 1363              		.loc 1 318 5 view .LVU328
+ 1364 000e 9FED429A 		vldr.32	s18, .L85
+ 1365 0012 B0EE490A 		vmov.f32	s0, s18
+ 1366 0016 FFF7FEFF 		bl	moveStraight
+ 1367              	.LVL143:
+ 319:Core/Src/utils.c ****     delay_ms(200);
+ 1368              		.loc 1 319 5 view .LVU329
+ 1369 001a C820     		movs	r0, #200
+ 1370 001c FFF7FEFF 		bl	delay_ms
+ 1371              	.LVL144:
+ 320:Core/Src/utils.c **** 
+ 321:Core/Src/utils.c ****     MPU_Update();
+ 1372              		.loc 1 321 5 view .LVU330
+ 1373 0020 FFF7FEFF 		bl	MPU_Update
+ 1374              	.LVL145:
+ 322:Core/Src/utils.c ****     turnByAngle(-120.0f );
+ 1375              		.loc 1 322 5 view .LVU331
+ 1376 0024 DFED3D9A 		vldr.32	s19, .L85+4
+ 1377 0028 B0EE690A 		vmov.f32	s0, s19
+ 1378 002c FFF7FEFF 		bl	turnByAngle
+ 1379              	.LVL146:
+ 323:Core/Src/utils.c **** 
+ 324:Core/Src/utils.c ****     MPU_Calibrate();
+ 1380              		.loc 1 324 5 view .LVU332
+ 1381 0030 FFF7FEFF 		bl	MPU_Calibrate
+ 1382              	.LVL147:
+ 325:Core/Src/utils.c ****     moveStraight(60.0f);
+ 1383              		.loc 1 325 5 view .LVU333
+ 1384 0034 B0EE490A 		vmov.f32	s0, s18
+ 1385 0038 FFF7FEFF 		bl	moveStraight
+ 1386              	.LVL148:
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 36
+
+
+ 326:Core/Src/utils.c ****     delay_ms(200);
+ 1387              		.loc 1 326 5 view .LVU334
+ 1388 003c C820     		movs	r0, #200
+ 1389 003e FFF7FEFF 		bl	delay_ms
+ 1390              	.LVL149:
+ 327:Core/Src/utils.c **** 
+ 328:Core/Src/utils.c ****     MPU_Update();
+ 1391              		.loc 1 328 5 view .LVU335
+ 1392 0042 FFF7FEFF 		bl	MPU_Update
+ 1393              	.LVL150:
+ 329:Core/Src/utils.c ****     turnByAngle(-24.0f);
+ 1394              		.loc 1 329 5 view .LVU336
+ 1395 0046 BBEE080A 		vmov.f32	s0, #-2.4e+1
+ 1396 004a FFF7FEFF 		bl	turnByAngle
+ 1397              	.LVL151:
+ 330:Core/Src/utils.c **** 
+ 331:Core/Src/utils.c ****     MPU_Calibrate();
+ 1398              		.loc 1 331 5 view .LVU337
+ 1399 004e FFF7FEFF 		bl	MPU_Calibrate
+ 1400              	.LVL152:
+ 332:Core/Src/utils.c ****     moveStraight(50.0f);
+ 1401              		.loc 1 332 5 view .LVU338
+ 1402 0052 9FED338A 		vldr.32	s16, .L85+8
+ 1403 0056 B0EE480A 		vmov.f32	s0, s16
+ 1404 005a FFF7FEFF 		bl	moveStraight
+ 1405              	.LVL153:
+ 333:Core/Src/utils.c ****     delay_ms(200);
+ 1406              		.loc 1 333 5 view .LVU339
+ 1407 005e C820     		movs	r0, #200
+ 1408 0060 FFF7FEFF 		bl	delay_ms
+ 1409              	.LVL154:
+ 334:Core/Src/utils.c **** 
+ 335:Core/Src/utils.c ****     MPU_Update();
+ 1410              		.loc 1 335 5 view .LVU340
+ 1411 0064 FFF7FEFF 		bl	MPU_Update
+ 1412              	.LVL155:
+ 336:Core/Src/utils.c ****     turnByAngle(72.0f);
+ 1413              		.loc 1 336 5 view .LVU341
+ 1414 0068 DFED2E8A 		vldr.32	s17, .L85+12
+ 1415 006c B0EE680A 		vmov.f32	s0, s17
+ 1416 0070 FFF7FEFF 		bl	turnByAngle
+ 1417              	.LVL156:
+ 337:Core/Src/utils.c **** 
+ 338:Core/Src/utils.c ****     MPU_Calibrate();
+ 1418              		.loc 1 338 5 view .LVU342
+ 1419 0074 FFF7FEFF 		bl	MPU_Calibrate
+ 1420              	.LVL157:
+ 339:Core/Src/utils.c ****     moveStraight(50.0f);
+ 1421              		.loc 1 339 5 view .LVU343
+ 1422 0078 B0EE480A 		vmov.f32	s0, s16
+ 1423 007c FFF7FEFF 		bl	moveStraight
+ 1424              	.LVL158:
+ 340:Core/Src/utils.c ****     delay_ms(200);
+ 1425              		.loc 1 340 5 view .LVU344
+ 1426 0080 C820     		movs	r0, #200
+ 1427 0082 FFF7FEFF 		bl	delay_ms
+ 1428              	.LVL159:
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 37
+
+
+ 341:Core/Src/utils.c **** 
+ 342:Core/Src/utils.c ****     MPU_Update();
+ 1429              		.loc 1 342 5 view .LVU345
+ 1430 0086 FFF7FEFF 		bl	MPU_Update
+ 1431              	.LVL160:
+ 343:Core/Src/utils.c ****     turnByAngle(72.0f);
+ 1432              		.loc 1 343 5 view .LVU346
+ 1433 008a B0EE680A 		vmov.f32	s0, s17
+ 1434 008e FFF7FEFF 		bl	turnByAngle
+ 1435              	.LVL161:
+ 344:Core/Src/utils.c **** 
+ 345:Core/Src/utils.c ****     MPU_Calibrate();
+ 1436              		.loc 1 345 5 view .LVU347
+ 1437 0092 FFF7FEFF 		bl	MPU_Calibrate
+ 1438              	.LVL162:
+ 346:Core/Src/utils.c ****     moveStraight(50.0f);
+ 1439              		.loc 1 346 5 view .LVU348
+ 1440 0096 B0EE480A 		vmov.f32	s0, s16
+ 1441 009a FFF7FEFF 		bl	moveStraight
+ 1442              	.LVL163:
+ 347:Core/Src/utils.c ****     delay_ms(200);
+ 1443              		.loc 1 347 5 view .LVU349
+ 1444 009e C820     		movs	r0, #200
+ 1445 00a0 FFF7FEFF 		bl	delay_ms
+ 1446              	.LVL164:
+ 348:Core/Src/utils.c **** 
+ 349:Core/Src/utils.c ****     MPU_Update();
+ 1447              		.loc 1 349 5 view .LVU350
+ 1448 00a4 FFF7FEFF 		bl	MPU_Update
+ 1449              	.LVL165:
+ 350:Core/Src/utils.c ****     turnByAngle(72.0f);
+ 1450              		.loc 1 350 5 view .LVU351
+ 1451 00a8 B0EE680A 		vmov.f32	s0, s17
+ 1452 00ac FFF7FEFF 		bl	turnByAngle
+ 1453              	.LVL166:
+ 351:Core/Src/utils.c **** 
+ 352:Core/Src/utils.c ****     MPU_Calibrate();
+ 1454              		.loc 1 352 5 view .LVU352
+ 1455 00b0 FFF7FEFF 		bl	MPU_Calibrate
+ 1456              	.LVL167:
+ 353:Core/Src/utils.c ****     moveStraight(50.0f);
+ 1457              		.loc 1 353 5 view .LVU353
+ 1458 00b4 B0EE480A 		vmov.f32	s0, s16
+ 1459 00b8 FFF7FEFF 		bl	moveStraight
+ 1460              	.LVL168:
+ 354:Core/Src/utils.c ****     delay_ms(200);
+ 1461              		.loc 1 354 5 view .LVU354
+ 1462 00bc C820     		movs	r0, #200
+ 1463 00be FFF7FEFF 		bl	delay_ms
+ 1464              	.LVL169:
+ 355:Core/Src/utils.c **** 
+ 356:Core/Src/utils.c ****     MPU_Update();
+ 1465              		.loc 1 356 5 view .LVU355
+ 1466 00c2 FFF7FEFF 		bl	MPU_Update
+ 1467              	.LVL170:
+ 357:Core/Src/utils.c ****     turnByAngle(72.0f);
+ 1468              		.loc 1 357 5 view .LVU356
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 38
+
+
+ 1469 00c6 B0EE680A 		vmov.f32	s0, s17
+ 1470 00ca FFF7FEFF 		bl	turnByAngle
+ 1471              	.LVL171:
+ 358:Core/Src/utils.c **** 
+ 359:Core/Src/utils.c ****     MPU_Calibrate();
+ 1472              		.loc 1 359 5 view .LVU357
+ 1473 00ce FFF7FEFF 		bl	MPU_Calibrate
+ 1474              	.LVL172:
+ 360:Core/Src/utils.c ****     moveStraight(50.0f);
+ 1475              		.loc 1 360 5 view .LVU358
+ 1476 00d2 B0EE480A 		vmov.f32	s0, s16
+ 1477 00d6 FFF7FEFF 		bl	moveStraight
+ 1478              	.LVL173:
+ 361:Core/Src/utils.c ****     delay_ms(200);
+ 1479              		.loc 1 361 5 view .LVU359
+ 1480 00da C820     		movs	r0, #200
+ 1481 00dc FFF7FEFF 		bl	delay_ms
+ 1482              	.LVL174:
+ 362:Core/Src/utils.c **** 
+ 363:Core/Src/utils.c ****     MPU_Update();
+ 1483              		.loc 1 363 5 view .LVU360
+ 1484 00e0 FFF7FEFF 		bl	MPU_Update
+ 1485              	.LVL175:
+ 364:Core/Src/utils.c ****     turnByAngle(-24.0f);
+ 1486              		.loc 1 364 5 view .LVU361
+ 1487 00e4 BBEE080A 		vmov.f32	s0, #-2.4e+1
+ 1488 00e8 FFF7FEFF 		bl	turnByAngle
+ 1489              	.LVL176:
+ 365:Core/Src/utils.c **** 
+ 366:Core/Src/utils.c ****     MPU_Calibrate();
+ 1490              		.loc 1 366 5 view .LVU362
+ 1491 00ec FFF7FEFF 		bl	MPU_Calibrate
+ 1492              	.LVL177:
+ 367:Core/Src/utils.c ****     moveStraight(60.0f);
+ 1493              		.loc 1 367 5 view .LVU363
+ 1494 00f0 B0EE490A 		vmov.f32	s0, s18
+ 1495 00f4 FFF7FEFF 		bl	moveStraight
+ 1496              	.LVL178:
+ 368:Core/Src/utils.c ****     delay_ms(200);
+ 1497              		.loc 1 368 5 view .LVU364
+ 1498 00f8 C820     		movs	r0, #200
+ 1499 00fa FFF7FEFF 		bl	delay_ms
+ 1500              	.LVL179:
+ 369:Core/Src/utils.c **** 
+ 370:Core/Src/utils.c ****     MPU_Update();
+ 1501              		.loc 1 370 5 view .LVU365
+ 1502 00fe FFF7FEFF 		bl	MPU_Update
+ 1503              	.LVL180:
+ 371:Core/Src/utils.c ****     turnByAngle(-120.0f);
+ 1504              		.loc 1 371 5 view .LVU366
+ 1505 0102 B0EE690A 		vmov.f32	s0, s19
+ 1506 0106 FFF7FEFF 		bl	turnByAngle
+ 1507              	.LVL181:
+ 372:Core/Src/utils.c **** 
+ 373:Core/Src/utils.c ****     delay_ms(5000);
+ 1508              		.loc 1 373 5 view .LVU367
+ 1509 010a 41F28830 		movw	r0, #5000
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 39
+
+
+ 1510 010e FFF7FEFF 		bl	delay_ms
+ 1511              	.LVL182:
+ 374:Core/Src/utils.c **** }...
+ 1512              		.loc 1 374 1 is_stmt 0 view .LVU368
+ 1513 0112 BDEC048B 		vldm	sp!, {d8-d9}
+ 1514              	.LCFI18:
+ 1515              		.cfi_restore 82
+ 1516              		.cfi_restore 83
+ 1517              		.cfi_restore 80
+ 1518              		.cfi_restore 81
+ 1519              		.cfi_def_cfa_offset 8
+ 1520 0116 08BD     		pop	{r3, pc}
+ 1521              	.L86:
+ 1522              		.align	2
+ 1523              	.L85:
+ 1524 0118 00007042 		.word	1114636288
+ 1525 011c 0000F0C2 		.word	-1024458752
+ 1526 0120 00004842 		.word	1112014848
+ 1527 0124 00009042 		.word	1116733440
+ 1528              		.cfi_endproc
+ 1529              	.LFE143:
+ 1531              		.global	pidSync
+ 1532              		.section	.data.pidSync,"aw"
+ 1533              		.align	2
+ 1536              	pidSync:
+ 1537 0000 00002041 		.word	1092616192
+ 1538 0004 0000803F 		.word	1065353216
+ 1539 0008 0000003F 		.word	1056964608
+ 1540 000c 00000000 		.space	8
+ 1540      00000000 
+ 1541              		.global	pidYaw
+ 1542              		.section	.data.pidYaw,"aw"
+ 1543              		.align	2
+ 1546              	pidYaw:
+ 1547 0000 6666DE41 		.word	1105094246
+ 1548 0004 00000000 		.word	0
+ 1549 0008 3333933F 		.word	1066611507
+ 1550 000c 00000000 		.space	8
+ 1550      00000000 
+ 1551              		.global	pidSpeed
+ 1552              		.section	.data.pidSpeed,"aw"
+ 1553              		.align	2
+ 1556              	pidSpeed:
+ 1557 0000 33335B41 		.word	1096495923
+ 1558 0004 3333F33F 		.word	1072902963
+ 1559 0008 CDCCCC3D 		.word	1036831949
+ 1560 000c 00000000 		.space	8
+ 1560      00000000 
+ 1561              		.global	MIN_PWM
+ 1562              		.section	.data.MIN_PWM,"aw"
+ 1563              		.align	1
+ 1566              	MIN_PWM:
+ 1567 0000 6C02     		.short	620
+ 1568              		.global	MAX_PWM
+ 1569              		.section	.data.MAX_PWM,"aw"
+ 1570              		.align	1
+ 1573              	MAX_PWM:
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 40
+
+
+ 1574 0000 BC02     		.short	700
+ 1575              		.text
+ 1576              	.Letext0:
+ 1577              		.file 3 "C:/SysGCC/arm-eabi/arm-none-eabi/include/machine/_default_types.h"
+ 1578              		.file 4 "C:/SysGCC/arm-eabi/arm-none-eabi/include/sys/_stdint.h"
+ 1579              		.file 5 "Core/Inc/utils.h"
+ 1580              		.file 6 "Core/Inc/..\\..\\CMSIS\\Devices\\STM32F4xx\\Inc\\STM32F411xE\\stm32f411xe.h"
+ 1581              		.file 7 "Core/Inc/it_handlers.h"
+ 1582              		.file 8 "Core/Inc/mpu_i2c.h"
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 41
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 utils.c
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:21     .text.millis:00000000 $t
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:27     .text.millis:00000000 millis
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:43     .text.millis:00000008 $d
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:48     .text.delay_ms:00000000 $t
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:54     .text.delay_ms:00000000 delay_ms
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:95     .text.constrainf:00000000 $t
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:101    .text.constrainf:00000000 constrainf
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:166    .text.normalizeAngle:00000000 $t
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:172    .text.normalizeAngle:00000000 normalizeAngle
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:215    .text.normalizeAngle:00000034 $d
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:222    .text.PWM_Left:00000000 $t
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:228    .text.PWM_Left:00000000 PWM_Left
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:261    .text.PWM_Left:0000001c $d
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:266    .text.PWM_Right:00000000 $t
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:272    .text.PWM_Right:00000000 PWM_Right
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:305    .text.PWM_Right:0000001c $d
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:310    .text.left_dir:00000000 $t
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:316    .text.left_dir:00000000 left_dir
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:365    .text.left_dir:00000028 $d
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:372    .text.right_dir:00000000 $t
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:378    .text.right_dir:00000000 right_dir
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:427    .text.right_dir:00000028 $d
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:434    .text.stopMotors:00000000 $t
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:440    .text.stopMotors:00000000 stopMotors
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:477    .text.PID:00000000 $t
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:483    .text.PID:00000000 PID
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:618    .text.PID:000000c0 $d
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:625    .text.PID_Reset:00000000 $t
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:631    .text.PID_Reset:00000000 PID_Reset
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:652    .text.turnByAngle:00000000 $t
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:658    .text.turnByAngle:00000000 turnByAngle
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:963    .text.turnByAngle:00000180 $d
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:1556   .data.pidSpeed:00000000 pidSpeed
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:1546   .data.pidYaw:00000000 pidYaw
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:1536   .data.pidSync:00000000 pidSync
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:975    .text.moveStraight:00000000 $t
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:981    .text.moveStraight:00000000 moveStraight
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:1320   .text.moveStraight:00000170 $d
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:1333   .text.Traject:00000000 $t
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:1339   .text.Traject:00000000 Traject
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:1524   .text.Traject:00000118 $d
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:1533   .data.pidSync:00000000 $d
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:1543   .data.pidYaw:00000000 $d
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:1553   .data.pidSpeed:00000000 $d
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:1566   .data.MIN_PWM:00000000 MIN_PWM
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:1563   .data.MIN_PWM:00000000 $d
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:1573   .data.MAX_PWM:00000000 MAX_PWM
+C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s:1570   .data.MAX_PWM:00000000 $d
+
+UNDEFINED SYMBOLS
+sys_tick
+__aeabi_f2d
+__aeabi_dmul
+__aeabi_dadd
+__aeabi_d2f
+ARM GAS  C:\Users\parni\AppData\Local\Temp\ccbSD9Ne.s 			page 42
+
+
+MPU_Update
+MPU_GetYaw
+left_encoder_ticks
+right_encoder_ticks
+MPU_Calibrate
